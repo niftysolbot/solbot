@@ -1,0 +1,2 @@
+# solbot
+Solana Discord Bot
