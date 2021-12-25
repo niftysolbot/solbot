@@ -1,8 +1,8 @@
+mod magiceden_stats_response;
+
 use std::env;
 use std::collections::HashMap;
-use std::thread;
 use reqwest::blocking::get;
-use tokio::task;
 
 use serenity::{
     async_trait,
@@ -26,11 +26,12 @@ impl EventHandler for Handler {
                 println!("Error sending message: {:?}", why);
             }
         }
-        // if msg.content == "!floor boryoku_dragonz magiceden" {
-        if msg.content == "!get me boryoku_dragonz magiceden json" {
-            let concurrent_future = task::spawn(get_magic_eden_json()).await.unwrap();
+        // if msg.content == "!get me boryoku_dragonz magiceden json" {
+        if msg.content.contains("!get me") {
+            let split_input_string_tokens:Vec<&str>= msg.content.split(" ").collect();
+            let concurrent_future = tokio::spawn(get_magic_eden_json(split_input_string_tokens[2].to_string())).await.unwrap();
             let mut s = concurrent_future.unwrap();
-            let d = &s[..2000]; // trim string to 2000 chars
+            let d = &s[..200]; // trim string to 2000 chars
 
 
             if let Err(why) = msg.channel_id.say(&ctx.http, d).await {
@@ -71,17 +72,18 @@ async fn main() {
 }
 
 
-async fn get_magic_eden_json() -> Result<String, reqwest::Error> {
+async fn get_magic_eden_json(collection_name: String) -> Result<String, reqwest::Error> {
     // Build the client using the builder pattern
     let client = reqwest::Client::new();
 
     // Perform the actual execution of the network request
     let res = client
-        .get("https://api-mainnet.magiceden.io/rpc/getCollectionEscrowStats/boryoku_dragonz")
+        .get(format!("https://api-mainnet.magiceden.io/rpc/getCollectionEscrowStats/{}", collection_name))
         .header("Accept", "application/json, text/plain, */*")
         .header("Referer", "https://magiceden.io/")
         .header("User-Agent", "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/96.0.4664.93 Safari/537.36")
         .send().await?;
+
 
     return res.text().await;
 }
