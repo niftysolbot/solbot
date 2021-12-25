@@ -10,6 +10,7 @@ use serenity::{
     prelude::*,
 };
 use serenity::futures::TryFutureExt;
+use crate::magiceden_stats_response::MagicEdenResponse;
 
 struct Handler;
 
@@ -29,12 +30,12 @@ impl EventHandler for Handler {
         // if msg.content == "!get me boryoku_dragonz magiceden json" {
         if msg.content.contains("!get me") {
             let split_input_string_tokens:Vec<&str>= msg.content.split(" ").collect();
-            let concurrent_future = tokio::spawn(get_magic_eden_json(split_input_string_tokens[2].to_string())).await.unwrap();
-            let mut s = concurrent_future.unwrap();
-            let d = &s[..200]; // trim string to 2000 chars
+            let magiceden_stats_response = tokio::spawn(get_magic_eden_json(split_input_string_tokens[2].to_string())).await.unwrap();
+            let floor_price = magiceden_stats_response.unwrap().results.floor_price as f64 / 1000000000 as f64;
+            let floor_price_message = "Floor price: ".to_owned() + &*floor_price.to_string();
 
 
-            if let Err(why) = msg.channel_id.say(&ctx.http, d).await {
+            if let Err(why) = msg.channel_id.say(&ctx.http, floor_price_message).await {
                 println!("Error sending message: {:?}", why);
             }
         }
@@ -72,18 +73,18 @@ async fn main() {
 }
 
 
-async fn get_magic_eden_json(collection_name: String) -> Result<String, reqwest::Error> {
+async fn get_magic_eden_json(collection_name: String) -> reqwest::Result<MagicEdenResponse> {
     // Build the client using the builder pattern
     let client = reqwest::Client::new();
 
     // Perform the actual execution of the network request
-    let res = client
+    let response = client
         .get(format!("https://api-mainnet.magiceden.io/rpc/getCollectionEscrowStats/{}", collection_name))
         .header("Accept", "application/json, text/plain, */*")
         .header("Referer", "https://magiceden.io/")
         .header("User-Agent", "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/96.0.4664.93 Safari/537.36")
-        .send().await?;
+        .send().await
+        .unwrap();
 
-
-    return res.text().await;
+    return response.json::<MagicEdenResponse>().await;
 }
