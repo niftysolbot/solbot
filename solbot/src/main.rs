@@ -1,15 +1,11 @@
 mod magiceden_stats_response;
 
 use std::env;
-use std::collections::HashMap;
-use reqwest::blocking::get;
-
 use serenity::{
     async_trait,
     model::{channel::Message, gateway::Ready},
     prelude::*,
 };
-use serenity::futures::TryFutureExt;
 use crate::magiceden_stats_response::MagicEdenResponse;
 
 struct Handler;
