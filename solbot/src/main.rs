@@ -39,7 +39,7 @@ impl EventHandler for Handler {
             }
             else if msg.content.contains("solanart") {
                 let solanart_stats_response = tokio::spawn(get_solanart_json(collection_name.to_owned())).await.unwrap();
-                floor_price = solanart_stats_response.unwrap().pagination.floor_price_filters as f64;
+                floor_price = solanart_stats_response.unwrap().floor_price as f64;
             }
             else if msg.content.contains("digitaleyes") {
                 let digitaleyes_stats_response = tokio::spawn(get_digitaleyes_json(collection_name.to_owned())).await.unwrap();
@@ -108,9 +108,7 @@ async fn get_solanart_json(collection_name: String) -> reqwest::Result<SolanartR
 
     // Perform the actual execution of the network request
     let response = client
-        .get(format!("https://qzlsklfacc.medianetwork.cloud/get_nft?\
-        collection={}&page=0&limit=30&order=price-ASC&fits=any&trait=\
-        &search=&min=0&max=0&listed=true&ownedby=&attrib_count=&bid=all", collection_name))
+        .get(format!("https://qzlsklfacc.medianetwork.cloud/get_floor_price?collection={}", collection_name))
         .header("accept", "*/*")
         .header("origin", "https://solanart.io")
         .header("referer", "https://solanart.io/")
@@ -126,6 +124,9 @@ async fn get_digitaleyes_json(collection_name: String) -> reqwest::Result<Digita
     let client = reqwest::Client::new();
 
     println!("Collection name: {}", collection_name);
+
+    // To get all collections:
+    // https://us-central1-digitaleyes-prod.cloudfunctions.net/collection-retriever
 
     // Perform the actual execution of the network request
     let response = client
