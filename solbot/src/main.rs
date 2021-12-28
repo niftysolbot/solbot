@@ -90,6 +90,9 @@ async fn get_magic_eden_json(collection_name: String) -> reqwest::Result<MagicEd
     // Build the client using the builder pattern
     let client = reqwest::Client::new();
 
+    // All collections:
+    // https://api-mainnet.magiceden.io/all_collections
+
     // Perform the actual execution of the network request
     let response = client
         .get(format!("https://api-mainnet.magiceden.io/rpc/getCollectionEscrowStats/{}", collection_name))
@@ -105,6 +108,9 @@ async fn get_magic_eden_json(collection_name: String) -> reqwest::Result<MagicEd
 async fn get_solanart_json(collection_name: String) -> reqwest::Result<SolanartResponse> {
     // Build the client using the builder pattern
     let client = reqwest::Client::new();
+
+    // To get all collections:
+    // https://qzlsklfacc.medianetwork.cloud/query_volume_all
 
     // Perform the actual execution of the network request
     let response = client
