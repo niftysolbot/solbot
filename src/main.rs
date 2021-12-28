@@ -1,5 +1,5 @@
 mod magiceden_stats_response;
-mod solanart_stats_response;
+mod solanart;
 mod digital_eyes;
 
 use std::env;
@@ -9,8 +9,8 @@ use serenity::{
     prelude::*,
 };
 use digital_eyes::digitaleyes_api::handle_digitaleyes;
+use solanart::solanart_api::handle_solanart;
 use magiceden_stats_response::MagicEdenResponse;
-use solanart_stats_response::SolanartResponse;
 
 struct Handler;
 
@@ -38,8 +38,9 @@ impl EventHandler for Handler {
                 let magiceden_stats_response = tokio::spawn(get_magic_eden_json(collection_name.to_owned())).await.unwrap();
                 floor_price = magiceden_stats_response.unwrap().results.floor_price as f64 / 1000000000 as f64;
             } else if msg.content.contains("solanart") {
-                let solanart_stats_response = tokio::spawn(get_solanart_json(collection_name.to_owned())).await.unwrap();
-                floor_price = solanart_stats_response.unwrap().floor_price as f64;
+                let (floor_price_temp, error_message_temp) = handle_solanart(collection_name).await;
+                floor_price = floor_price_temp;
+                error_message = error_message_temp;
             } else if msg.content.contains("digitaleyes") {
                 // Handle digitaleyes call
                 let (floor_price_temp, error_message_temp) = handle_digitaleyes(collection_name).await;
@@ -109,24 +110,4 @@ async fn get_magic_eden_json(collection_name: String) -> reqwest::Result<MagicEd
         .unwrap();
 
     return response.json::<MagicEdenResponse>().await;
-}
-
-async fn get_solanart_json(collection_name: String) -> reqwest::Result<SolanartResponse> {
-    // Build the client using the builder pattern
-    let client = reqwest::Client::new();
-
-    // To get all collections:
-    // https://qzlsklfacc.medianetwork.cloud/query_volume_all
-
-    // Perform the actual execution of the network request
-    let response = client
-        .get(format!("https://qzlsklfacc.medianetwork.cloud/get_floor_price?collection={}", collection_name))
-        .header("accept", "*/*")
-        .header("origin", "https://solanart.io")
-        .header("referer", "https://solanart.io/")
-        .header("user-agent", "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/96.0.4664.93 Safari/537.36")
-        .send().await
-        .unwrap();
-
-    return response.json::<SolanartResponse>().await;
 }
