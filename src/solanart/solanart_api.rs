@@ -2,20 +2,20 @@ use reqwest::{Error, Response};
 use super::solanart_stats_response::SolanartResponse;
 
 pub async fn handle_solanart(collection_name: String) -> (f64, String) {
-    match tokio::spawn(get_solanart_json(collection_name.to_owned())).await.unwrap() {
+    return match tokio::spawn(get_solanart_json(collection_name.to_owned())).await.unwrap() {
         Ok(solanart_stats_response) => {
             // Handle json failure
             match solanart_stats_response.json::<SolanartResponse>().await {
-                Ok(json_parsed_response) => return (json_parsed_response.floor_price as f64, "".to_string()),
+                Ok(json_parsed_response) => (json_parsed_response.floor_price as f64, "".to_string()),
                 Err(json_error) => {
                     println!("Problem calling Solanart api json: {:?}", json_error);
-                    return (0.0 as f64, "Could not get response from Solanart".to_string());
+                    (0.0 as f64, "Could not get response from Solanart".to_string())
                 }
             }
         }
         Err(error) => {
             println!("Problem calling Solanart api: {:?}", error);
-            return (0.0 as f64, "Could not get response from Solanart".to_string());
+            (0.0 as f64, "Could not get response from Solanart".to_string())
         }
     };
 }

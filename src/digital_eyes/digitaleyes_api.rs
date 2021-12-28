@@ -2,20 +2,20 @@ use reqwest::{Error, Response};
 use super::digitaleyes_stats_response::DigitalEyesResponse;
 
 pub async fn handle_digitaleyes(collection_name: String) -> (f64, String) {
-    match tokio::spawn(get_digitaleyes_json(collection_name.to_owned())).await.unwrap() {
+    return match tokio::spawn(get_digitaleyes_json(collection_name.to_owned())).await.unwrap() {
         Ok(digitaleyes_stats_response) => {
             // Handle json failure
             match digitaleyes_stats_response.json::<DigitalEyesResponse>().await {
-                Ok(json_parsed_response) => return (json_parsed_response.price_floor as f64 / 1000000000 as f64, "".to_string()),
+                Ok(json_parsed_response) => (json_parsed_response.price_floor as f64 / 1000000000 as f64, "".to_string()),
                 Err(json_error) => {
                     println!("Problem calling digitaleyes api json: {:?}", json_error);
-                    return (0.0 as f64, "Could not get response from Digitaleyes".to_string());
+                    (0.0 as f64, "Could not get response from Digitaleyes".to_string())
                 }
             }
         }
         Err(error) => {
             println!("Problem calling digitaleyes api: {:?}", error);
-            return (0.0 as f64, "Could not get response from Digitaleyes".to_string());
+            (0.0 as f64, "Could not get response from Digitaleyes".to_string())
         }
     };
 }
