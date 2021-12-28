@@ -29,8 +29,8 @@ impl EventHandler for Handler {
                 println!("Error sending message: {:?}", why);
             }
         }
-        // if msg.content == "!get me boryoku_dragonz magiceden json" {
-        if msg.content.contains("!floor ") {
+
+        if msg.content.len() > 7 && msg.content.get(0..7).unwrap() == ("!floor ") {
             let split_input_string_tokens: Vec<&str> = msg.content.split(" ").collect();
             let collection_name = split_input_string_tokens[1].to_string();
             let mut floor_prices_map = HashMap::new();
