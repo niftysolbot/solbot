@@ -8,7 +8,6 @@ use serenity::{
     model::{channel::Message, gateway::Ready},
     prelude::*,
 };
-use digital_eyes::digitaleyes_stats_response::DigitalEyesResponse;
 use digital_eyes::digitaleyes_api::handle_digitaleyes;
 use magiceden_stats_response::MagicEdenResponse;
 use solanart_stats_response::SolanartResponse;
