@@ -3,6 +3,7 @@ mod solanart_stats_response;
 mod digitaleyes_stats_response;
 
 use std::env;
+use reqwest::{Error, Response};
 use serenity::{
     async_trait,
     model::{channel::Message, gateway::Ready},
@@ -32,20 +33,26 @@ impl EventHandler for Handler {
             let split_input_string_tokens: Vec<&str> = msg.content.split(" ").collect();
             let collection_name = split_input_string_tokens[1].to_string();
             let mut floor_price = 0.0 as f64;
+            let mut error_message = "".to_string();
             if msg.content.contains("magiceden") {
                 //let marketplace = split_input_string_tokens[2].to_string();
                 let magiceden_stats_response = tokio::spawn(get_magic_eden_json(collection_name.to_owned())).await.unwrap();
                 floor_price = magiceden_stats_response.unwrap().results.floor_price as f64 / 1000000000 as f64;
-            }
-            else if msg.content.contains("solanart") {
+            } else if msg.content.contains("solanart") {
                 let solanart_stats_response = tokio::spawn(get_solanart_json(collection_name.to_owned())).await.unwrap();
                 floor_price = solanart_stats_response.unwrap().floor_price as f64;
+            } else if msg.content.contains("digitaleyes") {
+                // Handle digitaleyes call
+                let (floor_price_temp, error_message_temp) = handle_digitaleyes(collection_name).await;
+                floor_price = floor_price_temp;
+                error_message = error_message_temp;
             }
-            else if msg.content.contains("digitaleyes") {
-                let digitaleyes_stats_response = tokio::spawn(get_digitaleyes_json(collection_name.to_owned())).await.unwrap();
-                floor_price = digitaleyes_stats_response.unwrap().price_floor as f64 / 1000000000 as f64;
+            let floor_price_message: String;
+            if error_message.is_empty() {
+                floor_price_message = "Floor price: ".to_owned() + &*floor_price.to_string() + " SOL";
+            } else {
+                floor_price_message = error_message.to_owned();
             }
-            let floor_price_message = "Floor price: ".to_owned() + &*floor_price.to_string();
 
 
             if let Err(why) = msg.channel_id.say(&ctx.http, floor_price_message).await {
@@ -125,7 +132,27 @@ async fn get_solanart_json(collection_name: String) -> reqwest::Result<SolanartR
     return response.json::<SolanartResponse>().await;
 }
 
-async fn get_digitaleyes_json(collection_name: String) -> reqwest::Result<DigitalEyesResponse> {
+
+async fn handle_digitaleyes(collection_name: String) -> (f64, String) {
+    match tokio::spawn(get_digitaleyes_json(collection_name.to_owned())).await.unwrap() {
+        Ok(digitaleyes_stats_response) => {
+            // Handle json failure
+            match digitaleyes_stats_response.json::<DigitalEyesResponse>().await {
+                Ok(json_parsed_response) => return (json_parsed_response.price_floor as f64 / 1000000000 as f64, "".to_string()),
+                Err(json_error) => {
+                    println!("Problem calling digitaleyes api json: {:?}", json_error);
+                    return (0.0 as f64, "Could not get response from Digitaleyes".to_string());
+                }
+            }
+        }
+        Err(error) => {
+            println!("Problem calling digitaleyes api: {:?}", error);
+            return (0.0 as f64, "Could not get response from Digitaleyes".to_string());
+        }
+    };
+}
+
+async fn get_digitaleyes_json(collection_name: String) -> Result<Response, Error> {
     // Build the client using the builder pattern
     let client = reqwest::Client::new();
 
@@ -142,11 +169,6 @@ async fn get_digitaleyes_json(collection_name: String) -> reqwest::Result<Digita
         .header("referer", "https://digitaleyes.market/")
         .header("user-agent", "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/96.0.4664.93 Safari/537.36")
         .send().await;
-        //.unwrap();
-    let response = match response {
-        Ok(response) => response,
-        Err(error) => panic!("Problem calling api: {:?}", error),
-    };
 
-    return response.json::<DigitalEyesResponse>().await;
+    return response;
 }
