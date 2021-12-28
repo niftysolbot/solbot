@@ -3,6 +3,8 @@ mod digital_eyes;
 mod magiceden;
 
 use std::env;
+use std::collections::HashMap;
+
 use serenity::{
     async_trait,
     model::{channel::Message, gateway::Ready},
@@ -31,27 +33,40 @@ impl EventHandler for Handler {
         if msg.content.contains("!floor ") {
             let split_input_string_tokens: Vec<&str> = msg.content.split(" ").collect();
             let collection_name = split_input_string_tokens[1].to_string();
-            let mut floor_price = 0.0 as f64;
-            let mut error_message = "".to_string();
+            let mut floor_prices_map = HashMap::new();
+
             if msg.content.contains("magiceden") {
-                let (floor_price_temp, error_message_temp) = handle_magiceden(collection_name).await;
-                floor_price = floor_price_temp;
-                error_message = error_message_temp;
-            } else if msg.content.contains("solanart") {
-                let (floor_price_temp, error_message_temp) = handle_solanart(collection_name).await;
-                floor_price = floor_price_temp;
-                error_message = error_message_temp;
-            } else if msg.content.contains("digitaleyes") {
-                // Handle digitaleyes call
-                let (floor_price_temp, error_message_temp) = handle_digitaleyes(collection_name).await;
-                floor_price = floor_price_temp;
-                error_message = error_message_temp;
+                let (floor_price, error_message) = handle_magiceden(collection_name.to_owned()).await;
+                if error_message.is_empty() {
+                    floor_prices_map.insert(String::from("Magic Eden"), floor_price.to_string() + " SOL");
+                }
+                else {
+                    floor_prices_map.insert(String::from("Magic Eden"), error_message);
+                }
             }
-            let floor_price_message: String;
-            if error_message.is_empty() {
-                floor_price_message = "Floor price: ".to_owned() + &*floor_price.to_string() + " SOL";
-            } else {
-                floor_price_message = error_message.to_owned();
+            if msg.content.contains("solanart") {
+                let (floor_price, error_message) = handle_solanart(collection_name.to_owned()).await;
+                if error_message.is_empty() {
+                    floor_prices_map.insert(String::from("Solanart"), floor_price.to_string() + " SOL");
+                }
+                else {
+                    floor_prices_map.insert(String::from("Solanart"), error_message);
+                }
+            }
+            if msg.content.contains("digitaleyes") {
+                // Handle digitaleyes call
+                let (floor_price, error_message) = handle_digitaleyes(collection_name.to_owned()).await;
+                if error_message.is_empty() {
+                    floor_prices_map.insert(String::from("Digital Eyes"), floor_price.to_string() + " SOL");
+                }
+                else {
+                    floor_prices_map.insert(String::from("Digital Eyes"), error_message);
+                }
+            }
+            let mut floor_price_message = String::from("Floor Prices:\n");
+
+            for (marketplace, marketplace_floor_price) in floor_prices_map.iter() {
+                floor_price_message.push_str(&*(marketplace.to_owned() + " : " + marketplace_floor_price + "\n"));
             }
 
 
