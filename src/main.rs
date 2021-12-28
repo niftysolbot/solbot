@@ -35,7 +35,7 @@ impl EventHandler for Handler {
             let collection_name = split_input_string_tokens[1].to_string();
             let mut floor_prices_map = HashMap::new();
 
-            if msg.content.contains("magiceden") {
+            if msg.content.contains("magiceden") || split_input_string_tokens.len() == 2 {
                 let (floor_price, error_message) = handle_magiceden(collection_name.to_owned()).await;
                 if error_message.is_empty() {
                     floor_prices_map.insert(String::from("Magic Eden"), floor_price.to_string() + " SOL");
@@ -44,7 +44,7 @@ impl EventHandler for Handler {
                     floor_prices_map.insert(String::from("Magic Eden"), error_message);
                 }
             }
-            if msg.content.contains("solanart") {
+            if msg.content.contains("solanart") || split_input_string_tokens.len() == 2 {
                 let (floor_price, error_message) = handle_solanart(collection_name.to_owned()).await;
                 if error_message.is_empty() {
                     floor_prices_map.insert(String::from("Solanart"), floor_price.to_string() + " SOL");
@@ -53,7 +53,7 @@ impl EventHandler for Handler {
                     floor_prices_map.insert(String::from("Solanart"), error_message);
                 }
             }
-            if msg.content.contains("digitaleyes") {
+            if msg.content.contains("digitaleyes") || split_input_string_tokens.len() == 2 {
                 // Handle digitaleyes call
                 let (floor_price, error_message) = handle_digitaleyes(collection_name.to_owned()).await;
                 if error_message.is_empty() {
