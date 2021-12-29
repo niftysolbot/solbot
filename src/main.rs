@@ -42,9 +42,9 @@ impl EventHandler for Handler {
             ).await;
 
             let mut floor_price_message = String::from("Floor Prices:\n");
-            floor_price_message.push_str(&*tuple.0);
-            floor_price_message.push_str(&*tuple.1);
-            floor_price_message.push_str(&*tuple.2);
+            floor_price_message.push_str(tuple.0.as_str());
+            floor_price_message.push_str(tuple.1.as_str());
+            floor_price_message.push_str(tuple.2.as_str());
 
             if let Err(why) = msg.channel_id.say(&ctx.http, floor_price_message).await {
                 println!("Error sending message: {:?}", why);
@@ -85,13 +85,7 @@ async fn main() {
 
 async fn populate_digitaleyes(msg_content: String, token_len: usize,  collection_name: &String) -> String {
     if msg_content.contains("digitaleyes") || token_len == 2 {
-        let (floor_price,error_message) = handle_digitaleyes(collection_name.to_owned()).await;
-        println!("digitaleyes");
-        return if error_message.is_empty() {
-            "Digital Eyes: ".to_owned() + &*floor_price.to_string() + &*" SOL\n".to_owned()
-        } else {
-            "Digital Eyes: ".to_owned() + &*error_message + &*"\n".to_owned()
-        }
+        return handle_digitaleyes(collection_name.to_owned()).await;
     }
     return String::from("");
 }
@@ -99,26 +93,16 @@ async fn populate_digitaleyes(msg_content: String, token_len: usize,  collection
 
 async fn populate_solanart(msg_content: String, token_len: usize, collection_name: &String) -> String {
     if msg_content.contains("solanart") || token_len == 2 {
-        let (floor_price,error_message) = handle_solanart(collection_name.to_owned()).await;
         println!("solanart");
-        return if error_message.is_empty() {
-            "Solanart: ".to_owned() + &*floor_price.to_string() + &*" SOL\n".to_owned()
-        } else {
-            "Solanart: ".to_owned() + &*error_message + &*"\n".to_owned()
-        }
+        return handle_solanart(collection_name.to_owned()).await;
     }
     return String::from("");
 }
 
 async fn populate_magiceden(msg_content: String, token_len: usize, collection_name: &String) -> String {
     if msg_content.contains("magiceden") || token_len == 2 {
-        let (floor_price,error_message) = handle_magiceden(collection_name.to_owned()).await;
         println!("magiceden");
-        return if error_message.is_empty() {
-            "Magic Eden: ".to_owned() + &*floor_price.to_string() + &*" SOL\n".to_owned()
-        } else {
-            "Magic Eden: ".to_owned() + &*error_message + &*"\n".to_owned()
-        }
+        return handle_magiceden(collection_name.to_owned()).await;
     }
     return String::from("");
 }
