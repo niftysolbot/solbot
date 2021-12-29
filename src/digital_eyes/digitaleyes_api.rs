@@ -7,7 +7,7 @@ pub async fn handle_digitaleyes(collection_name: String) -> String {
         Ok(digitaleyes_stats_response) => {
             // Handle json failure
             match digitaleyes_stats_response.json::<DigitalEyesResponse>().await {
-                Ok(json_parsed_response) => (format!("Digital Eyes: {} SOL\n", json_parsed_response.price_floor as f64 / 1000000000 as f64)),
+                Ok(json_parsed_response) => (format!("Digital Eyes: {} SOL", json_parsed_response.price_floor as f64 / 1000000000 as f64)),
                 Err(json_error) => {
                     println!("Problem calling digitaleyes api json: {:?}", json_error);
                     String::from("Digital Eyes: Could not get response from Digitaleyes")

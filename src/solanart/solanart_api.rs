@@ -6,7 +6,7 @@ pub async fn handle_solanart(collection_name: String) -> String {
         Ok(solanart_stats_response) => {
             // Handle json failure
             match solanart_stats_response.json::<SolanartResponse>().await {
-                Ok(json_parsed_response) => (format!("Solanart: {} SOL\n", json_parsed_response.floor_price as f64)),
+                Ok(json_parsed_response) => (format!("Solanart: {} SOL", json_parsed_response.floor_price as f64)),
                 Err(json_error) => {
                     println!("Problem calling Solanart api json: {:?}", json_error);
                     String::from("Solanart: Could not get response from Solanart")

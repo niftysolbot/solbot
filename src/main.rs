@@ -1,6 +1,7 @@
 mod solanart;
 mod digital_eyes;
 mod magiceden;
+mod alpha_art;
 
 use std::env;
 
@@ -14,6 +15,7 @@ use serenity::futures::future;
 use digital_eyes::digitaleyes_api::handle_digitaleyes;
 use solanart::solanart_api::handle_solanart;
 use magiceden::magiceden_api::handle_magiceden;
+use alpha_art::alpha_art_api::handle_alpha_art;
 
 struct Handler;
 
@@ -35,16 +37,18 @@ impl EventHandler for Handler {
             let split_input_string_tokens: Vec<&str> = msg.content.split(" ").collect();
             let collection_name = split_input_string_tokens[1].to_string();
 
-            let tuple = future::join3(
+            let tuple = future::join4(
                 populate_solanart(msg.content.clone(), split_input_string_tokens.len(), &collection_name),
                 populate_magiceden(msg.content.clone(), split_input_string_tokens.len(), &collection_name),
-                populate_digitaleyes(msg.content.clone(), split_input_string_tokens.len(), &collection_name)
+                populate_digitaleyes(msg.content.clone(), split_input_string_tokens.len(), &collection_name),
+                populate_alphaart(msg.content.clone(), split_input_string_tokens.len(), &collection_name)
             ).await;
 
             let mut floor_price_message = String::from("Floor Prices:\n");
-            floor_price_message.push_str(tuple.0.as_str());
-            floor_price_message.push_str(tuple.1.as_str());
-            floor_price_message.push_str(tuple.2.as_str());
+            floor_price_message.push_str(&format!("{}\n", tuple.0).to_string());
+            floor_price_message.push_str(&format!("{}\n", tuple.1).to_string());
+            floor_price_message.push_str(&format!("{}\n", tuple.2).to_string());
+            floor_price_message.push_str(&format!("{}\n", tuple.3).to_string());
 
             if let Err(why) = msg.channel_id.say(&ctx.http, floor_price_message).await {
                 println!("Error sending message: {:?}", why);
@@ -103,6 +107,14 @@ async fn populate_magiceden(msg_content: String, token_len: usize, collection_na
     if msg_content.contains("magiceden") || token_len == 2 {
         println!("magiceden");
         return handle_magiceden(collection_name.to_owned()).await;
+    }
+    return String::from("");
+}
+
+async fn populate_alphaart(msg_content: String, token_len: usize, collection_name: &String) -> String {
+    if msg_content.contains("alphaart") || token_len == 2 {
+        println!("alphaart");
+        return handle_alpha_art(collection_name.to_owned()).await;
     }
     return String::from("");
 }
