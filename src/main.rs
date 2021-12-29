@@ -41,7 +41,7 @@ impl EventHandler for Handler {
                 populate_solanart(msg.content.clone(), split_input_string_tokens.len(), &collection_name),
                 populate_magiceden(msg.content.clone(), split_input_string_tokens.len(), &collection_name),
                 populate_digitaleyes(msg.content.clone(), split_input_string_tokens.len(), &collection_name),
-                populate_alphaart(msg.content.clone(), split_input_string_tokens.len(), &collection_name)
+                populate_alphaart(msg.content.clone(), split_input_string_tokens.len(), &collection_name),
             ).await;
 
             if let Err(why) = msg.channel_id.say(&ctx.http, construct_response_message(&tuple)).await {
@@ -59,15 +59,6 @@ impl EventHandler for Handler {
     async fn ready(&self, _: Context, ready: Ready) {
         println!("{} is connected!", ready.user.name);
     }
-}
-
-fn construct_response_message(tuple: &(String, String, String, String)) -> String {
-    let mut floor_price_message = String::from("Floor Prices:\n");
-    if !tuple.0.is_empty() { floor_price_message.push_str(&format!("{}\n", tuple.0).to_string()) };
-    if !tuple.1.is_empty() { floor_price_message.push_str(&format!("{}\n", tuple.1).to_string()) };
-    if !tuple.2.is_empty() { floor_price_message.push_str(&format!("{}\n", tuple.2).to_string()) };
-    if !tuple.3.is_empty() { floor_price_message.push_str(&format!("{}", tuple.3).to_string()) };
-    floor_price_message
 }
 
 #[tokio::main]
@@ -90,7 +81,7 @@ async fn main() {
     }
 }
 
-async fn populate_digitaleyes(msg_content: String, token_len: usize,  collection_name: &String) -> String {
+async fn populate_digitaleyes(msg_content: String, token_len: usize, collection_name: &String) -> String {
     if msg_content.contains("digitaleyes") || token_len == 2 {
         return handle_digitaleyes(collection_name.to_owned()).await;
     }
@@ -120,4 +111,13 @@ async fn populate_alphaart(msg_content: String, token_len: usize, collection_nam
         return handle_alpha_art(collection_name.to_owned()).await;
     }
     return String::from("");
+}
+
+fn construct_response_message(tuple: &(String, String, String, String)) -> String {
+    let mut floor_price_message = String::from("Floor Prices:\n");
+    if !tuple.0.is_empty() { floor_price_message.push_str(&format!("{}\n", tuple.0).to_string()) };
+    if !tuple.1.is_empty() { floor_price_message.push_str(&format!("{}\n", tuple.1).to_string()) };
+    if !tuple.2.is_empty() { floor_price_message.push_str(&format!("{}\n", tuple.2).to_string()) };
+    if !tuple.3.is_empty() { floor_price_message.push_str(&format!("{}", tuple.3).to_string()) };
+    floor_price_message
 }
