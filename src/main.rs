@@ -3,13 +3,14 @@ mod digital_eyes;
 mod magiceden;
 
 use std::env;
-use std::collections::HashMap;
 
 use serenity::{
     async_trait,
     model::{channel::Message, gateway::Ready},
     prelude::*,
 };
+use serenity::futures::future;
+
 use digital_eyes::digitaleyes_api::handle_digitaleyes;
 use solanart::solanart_api::handle_solanart;
 use magiceden::magiceden_api::handle_magiceden;
@@ -33,42 +34,17 @@ impl EventHandler for Handler {
         if msg.content.len() > 7 && msg.content.get(0..7).unwrap() == ("!floor ") {
             let split_input_string_tokens: Vec<&str> = msg.content.split(" ").collect();
             let collection_name = split_input_string_tokens[1].to_string();
-            let mut floor_prices_map = HashMap::new();
 
-            if msg.content.contains("magiceden") || split_input_string_tokens.len() == 2 {
-                let (floor_price, error_message) = handle_magiceden(collection_name.to_owned()).await;
-                if error_message.is_empty() {
-                    floor_prices_map.insert(String::from("Magic Eden"), floor_price.to_string() + " SOL");
-                }
-                else {
-                    floor_prices_map.insert(String::from("Magic Eden"), error_message);
-                }
-            }
-            if msg.content.contains("solanart") || split_input_string_tokens.len() == 2 {
-                let (floor_price, error_message) = handle_solanart(collection_name.to_owned()).await;
-                if error_message.is_empty() {
-                    floor_prices_map.insert(String::from("Solanart"), floor_price.to_string() + " SOL");
-                }
-                else {
-                    floor_prices_map.insert(String::from("Solanart"), error_message);
-                }
-            }
-            if msg.content.contains("digitaleyes") || split_input_string_tokens.len() == 2 {
-                // Handle digitaleyes call
-                let (floor_price, error_message) = handle_digitaleyes(collection_name.to_owned()).await;
-                if error_message.is_empty() {
-                    floor_prices_map.insert(String::from("Digital Eyes"), floor_price.to_string() + " SOL");
-                }
-                else {
-                    floor_prices_map.insert(String::from("Digital Eyes"), error_message);
-                }
-            }
+            let tuple = future::join3(
+                populate_solanart(msg.content.clone(), split_input_string_tokens.len(), &collection_name),
+                populate_magiceden(msg.content.clone(), split_input_string_tokens.len(), &collection_name),
+                populate_digitaleyes(msg.content.clone(), split_input_string_tokens.len(), &collection_name)
+            ).await;
+
             let mut floor_price_message = String::from("Floor Prices:\n");
-
-            for (marketplace, marketplace_floor_price) in floor_prices_map.iter() {
-                floor_price_message.push_str(&*(marketplace.to_owned() + " : " + marketplace_floor_price + "\n"));
-            }
-
+            floor_price_message.push_str(&*tuple.0);
+            floor_price_message.push_str(&*tuple.1);
+            floor_price_message.push_str(&*tuple.2);
 
             if let Err(why) = msg.channel_id.say(&ctx.http, floor_price_message).await {
                 println!("Error sending message: {:?}", why);
@@ -105,4 +81,44 @@ async fn main() {
     if let Err(why) = client.start().await {
         println!("Client error: {:?}", why);
     }
+}
+
+async fn populate_digitaleyes(msg_content: String, token_len: usize,  collection_name: &String) -> String {
+    if msg_content.contains("digitaleyes") || token_len == 2 {
+        let (floor_price,error_message) = handle_digitaleyes(collection_name.to_owned()).await;
+        println!("digitaleyes");
+        return if error_message.is_empty() {
+            "Digital Eyes: ".to_owned() + &*floor_price.to_string() + &*" SOL\n".to_owned()
+        } else {
+            "Digital Eyes: ".to_owned() + &*error_message + &*"\n".to_owned()
+        }
+    }
+    return String::from("");
+}
+
+
+async fn populate_solanart(msg_content: String, token_len: usize, collection_name: &String) -> String {
+    if msg_content.contains("solanart") || token_len == 2 {
+        let (floor_price,error_message) = handle_solanart(collection_name.to_owned()).await;
+        println!("solanart");
+        return if error_message.is_empty() {
+            "Solanart: ".to_owned() + &*floor_price.to_string() + &*" SOL\n".to_owned()
+        } else {
+            "Solanart: ".to_owned() + &*error_message + &*"\n".to_owned()
+        }
+    }
+    return String::from("");
+}
+
+async fn populate_magiceden(msg_content: String, token_len: usize, collection_name: &String) -> String {
+    if msg_content.contains("magiceden") || token_len == 2 {
+        let (floor_price,error_message) = handle_magiceden(collection_name.to_owned()).await;
+        println!("magiceden");
+        return if error_message.is_empty() {
+            "Magic Eden: ".to_owned() + &*floor_price.to_string() + &*" SOL\n".to_owned()
+        } else {
+            "Magic Eden: ".to_owned() + &*error_message + &*"\n".to_owned()
+        }
+    }
+    return String::from("");
 }
