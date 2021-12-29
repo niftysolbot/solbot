@@ -1,6 +1,7 @@
 use reqwest::{Error, Response};
 use super::digitaleyes_stats_response::DigitalEyesResponse;
 
+
 pub async fn handle_digitaleyes(collection_name: String) -> (f64, String) {
     return match tokio::spawn(get_digitaleyes_json(collection_name.to_owned())).await.unwrap() {
         Ok(digitaleyes_stats_response) => {
