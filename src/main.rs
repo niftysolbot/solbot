@@ -45,10 +45,10 @@ impl EventHandler for Handler {
             ).await;
 
             let mut floor_price_message = String::from("Floor Prices:\n");
-            floor_price_message.push_str(&format!("{}\n", tuple.0).to_string());
-            floor_price_message.push_str(&format!("{}\n", tuple.1).to_string());
-            floor_price_message.push_str(&format!("{}\n", tuple.2).to_string());
-            floor_price_message.push_str(&format!("{}\n", tuple.3).to_string());
+            if !tuple.0.is_empty() {floor_price_message.push_str(&format!("{}\n", tuple.0).to_string())};
+            if !tuple.1.is_empty() {floor_price_message.push_str(&format!("{}\n", tuple.1).to_string())};
+            if !tuple.2.is_empty() {floor_price_message.push_str(&format!("{}\n", tuple.2).to_string())};
+            if !tuple.3.is_empty() {floor_price_message.push_str(&format!("{}", tuple.3).to_string())};
 
             if let Err(why) = msg.channel_id.say(&ctx.http, floor_price_message).await {
                 println!("Error sending message: {:?}", why);
