@@ -1,3 +1,3 @@
 mod alpha_art_stats_response;
 pub mod alpha_art_api;
-mod alpha_art_all_collection_response;
+pub mod alpha_art_all_collection_response;

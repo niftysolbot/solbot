@@ -1,8 +1,9 @@
 use std::borrow::Borrow;
-use std::collections::{HashMap, HashSet};
+use std::collections::{HashMap};
 use super::solanart::solanart_all_collection_response::SolanartAllCollectionResponse;
 use super::magiceden::magiceden_all_collection_response::MagicEdenAllCollectionsResponse;
 use super::digital_eyes::digital_eyes_all_collection_response::DigitalEyesAllCollectionResponse;
+use super::alpha_art::alpha_art_all_collection_response::AlphaArtAllCollectionResponse;
 
 const MAGIC_EDEN: &str = "MAGIC_EDEN";
 const SOLANART: &str = "SOLANART";
@@ -10,7 +11,6 @@ const DIGITAL_EYES: &str = "DIGITAL_EYES";
 const ALPHA_ART: &str = "ALPHA_ART";
 
 #[derive(Debug)]
-// declaring a struct
 pub struct PfpCollection {
     // Solanart: name
     // Digital Eyes: name
@@ -49,7 +49,8 @@ pub struct PfpCollection {
 
 pub async fn combine_pfp_collections(magic_eden: HashMap<String, PfpCollection>,
                                      solanart: HashMap<String, PfpCollection>,
-                                     digital_eyes: HashMap<String, PfpCollection>) -> HashMap<String, PfpCollection> {
+                                     digital_eyes: HashMap<String, PfpCollection>,
+                                     alpha_art: HashMap<String, PfpCollection>) -> HashMap<String, PfpCollection> {
     let mut pfp_collections_combined: HashMap<String, PfpCollection> = HashMap::new();
     for (magic_eden_name, magic_eden_collection) in magic_eden {
         //pfp_collections_combined.insert(magic_eden_name.clone(), PfpCollection::new(magic_eden_collection));
@@ -85,6 +86,13 @@ pub async fn combine_pfp_collections(magic_eden: HashMap<String, PfpCollection>,
             Some(t) => {
                 let w = t.slug.get(DIGITAL_EYES).unwrap();
                 slug.insert(DIGITAL_EYES.parse().unwrap(), w.to_string());
+            },
+            _ => {}
+        }
+        match alpha_art.get(magic_eden_name.clone().as_str()) {
+            Some(t) => {
+                let w = t.slug.get(ALPHA_ART).unwrap();
+                slug.insert(ALPHA_ART.parse().unwrap(), w.to_string());
             },
             _ => {}
         }
@@ -124,22 +132,6 @@ pub async fn initialize_pfp_collection_from_digital_eyes(digital_eyes_collection
     println!("Digital Eyes Pfp collection size: {}", pfp_collections.len());
     pfp_collections
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -193,5 +185,32 @@ pub async fn initialize_pfp_collection_from_magic_eden(magic_eden: MagicEdenAllC
         }
     }
     println!("Magic Eden Pfp collection size: {}", pfp_collections.len());
+    pfp_collections
+}
+
+
+
+
+pub async fn initialize_pfp_collection_from_alpha_art(alpha_art: AlphaArtAllCollectionResponse) -> HashMap<String, PfpCollection> {
+    let mut pfp_collections: HashMap<String, PfpCollection> = HashMap::new();
+    for alpha_art_collection in alpha_art.collections {
+        let mut slug: HashMap<String, String> = HashMap::new();
+        slug.insert(ALPHA_ART.parse().unwrap(), alpha_art_collection.slug);
+        let collection = PfpCollection{
+            name: alpha_art_collection.title.to_lowercase(),
+            slug,
+            website: None,
+            twitter: None,
+            discord: None,
+            suggestions: Vec::new()
+        };
+        match pfp_collections.get(&*collection.name.to_lowercase()) {
+            Some(p) => println!("WARNING [Alpha Art]: collection already exists: {:?}", p),
+            None => {
+                pfp_collections.insert(collection.name.to_lowercase(), collection);
+            },
+        }
+    }
+    println!("Alpha Art Pfp collection size: {}", pfp_collections.len());
     pfp_collections
 }

@@ -3,7 +3,7 @@ use serde::Deserialize;
 #[derive(Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct DigitalEyesResponse {
-    pub count: i64,
+    // pub count: i64,
     // #[serde(rename = "next_cursor")]
     // pub next_cursor: Value,
     // pub offers: Vec<Offer>,

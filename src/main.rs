@@ -26,6 +26,7 @@ use digital_eyes::digitaleyes_api::handle_digital_eyes_all_collections;
 use all_collections_handling::initialize_pfp_collection_from_digital_eyes;
 use all_collections_handling::combine_pfp_collections;
 use crate::all_collections_handling::PfpCollection;
+use crate::alpha_art::alpha_art_api::handle_alpha_art_all_collections;
 
 
 struct Bot {
@@ -47,14 +48,14 @@ impl EventHandler for Bot {
         }
 
         if msg.content.len() > 7 && msg.content.get(0..7).unwrap() == ("!floor ") {
-            let split_input_string_tokens: Vec<&str> = msg.content.split(" ").collect();
-            let collection_name = split_input_string_tokens[1].to_string().to_lowercase(); //TODO: add ".to_lowercase" on the end
+            //let split_input_string_tokens: Vec<&str> = msg.content.split(" ").collect();
+            let collection_name = msg.content.get(7..).unwrap().to_lowercase(); //TODO: add ".to_lowercase" on the end
 
             let tuple = future::join4(
-                populate_solanart(msg.content.clone(), split_input_string_tokens.len(), &collection_name, &self.pfp_collections),
-                populate_magiceden(msg.content.clone(), split_input_string_tokens.len(), &collection_name, &self.pfp_collections),
-                populate_digitaleyes(msg.content.clone(), split_input_string_tokens.len(), &collection_name, &self.pfp_collections),
-                populate_alphaart(msg.content.clone(), split_input_string_tokens.len(), &collection_name),
+                populate_solanart(msg.content.clone(),  &collection_name, &self.pfp_collections),
+                populate_magiceden(msg.content.clone(),  &collection_name, &self.pfp_collections),
+                populate_digitaleyes(msg.content.clone(),  &collection_name, &self.pfp_collections),
+                populate_alphaart(msg.content.clone(),  &collection_name, &self.pfp_collections),
             ).await;
 
             if let Err(why) = msg.channel_id.say(&ctx.http, construct_response_message(&tuple)).await {
@@ -79,13 +80,15 @@ async fn main() {
     // Configure the client with your Discord bot token in the environment.
     let token = env::var("DISCORD_TOKEN").expect("Expected a token in the environment");
 
-    let solanart_all_collections = handle_solanart_all_collections().await;
-    let magic_eden_all_collections = handle_magic_eden_all_collections().await;
-    let digital_eyes_all_collections = handle_digital_eyes_all_collections().await;
-    let pfp_collections_magic_eden = initialize_pfp_collection_from_magic_eden(magic_eden_all_collections).await;
-    let pfp_collections_solanart = initialize_pfp_collection_from_solanart(solanart_all_collections).await;
-    let pfp_collections_digital_eyes = initialize_pfp_collection_from_digital_eyes(digital_eyes_all_collections).await;
-    let pfp_collections = combine_pfp_collections(pfp_collections_magic_eden, pfp_collections_solanart, pfp_collections_digital_eyes).await;
+    let tuple = future::join4(
+        handle_magic_eden_all_collections(),
+        handle_solanart_all_collections(),
+        handle_digital_eyes_all_collections(),
+        handle_alpha_art_all_collections()
+    ).await;
+
+
+    let pfp_collections = combine_pfp_collections(tuple.0, tuple.1, tuple.2, tuple.3).await;
     match pfp_collections.get("degenerate ape academy") {
         Some(s) => {
             match s.slug.get("SOLANART") {
@@ -129,8 +132,7 @@ async fn main() {
     }
 }
 
-async fn populate_digitaleyes(msg_content: String, token_len: usize, collection_name: &String, pfp_collections: &HashMap<String, PfpCollection>) -> String {
-    if msg_content.contains("digitaleyes") || token_len == 2 {
+async fn populate_digitaleyes(msg_content: String, collection_name: &String, pfp_collections: &HashMap<String, PfpCollection>) -> String {
         return match pfp_collections.get(collection_name) { // get the collection name from map of collections
             Some(pfp_col) => {
                 match pfp_col.slug.get("DIGITAL_EYES") { // check if there exists an api slug mapping for Digital Eyes
@@ -140,13 +142,10 @@ async fn populate_digitaleyes(msg_content: String, token_len: usize, collection_
             }
             None => String::from("")
         }
-    }
-    return String::from("");
 }
 
 
-async fn populate_solanart(msg_content: String, token_len: usize, collection_name: &String, pfp_collections: &HashMap<String, PfpCollection>) -> String {
-    if msg_content.contains("solanart") || token_len == 2 {
+async fn populate_solanart(msg_content: String, collection_name: &String, pfp_collections: &HashMap<String, PfpCollection>) -> String {
         return match pfp_collections.get(collection_name) { // get the collection name from map of collections
             Some(pfp_col) => {
                 match pfp_col.slug.get("SOLANART") { // check if there exists an api slug mapping for Solanart
@@ -156,12 +155,9 @@ async fn populate_solanart(msg_content: String, token_len: usize, collection_nam
             }
             None => String::from("")
         }
-    }
-    return String::from("");
 }
 
-async fn populate_magiceden(msg_content: String, token_len: usize, collection_name: &String, pfp_collections: &HashMap<String, PfpCollection>) -> String {
-    if msg_content.contains("magiceden") || token_len == 2 {
+async fn populate_magiceden(msg_content: String, collection_name: &String, pfp_collections: &HashMap<String, PfpCollection>) -> String {
         return match pfp_collections.get(collection_name) { // get the collection name from map of collections
             Some(pfp_col) => {
                 match pfp_col.slug.get("MAGIC_EDEN") { // check if there exists an api slug mapping for Magic Eden
@@ -171,20 +167,22 @@ async fn populate_magiceden(msg_content: String, token_len: usize, collection_na
             }
             None => String::from("")
         }
-    }
-    return String::from("");
 }
 
-async fn populate_alphaart(msg_content: String, token_len: usize, collection_name: &String) -> String {
-    if msg_content.contains("alphaart") || token_len == 2 {
-        println!("alphaart");
-        return handle_alpha_art(collection_name.to_owned()).await;
-    }
-    return String::from("");
+async fn populate_alphaart(msg_content: String, collection_name: &String, pfp_collections: &HashMap<String, PfpCollection>) -> String {
+        return match pfp_collections.get(collection_name) { // get the collection name from map of collections
+            Some(pfp_col) => {
+                match pfp_col.slug.get("ALPHA_ART") { // check if there exists an api slug mapping for Magic Eden
+                    None => String::from(""),
+                    Some(magic_eden_slug) => handle_alpha_art(magic_eden_slug.to_string()).await
+                }
+            }
+            None => String::from("")
+        }
 }
 
 fn construct_response_message(tuple: &(String, String, String, String)) -> String {
-    let mut floor_price_message = String::from("Floor Prices:\n");
+    let mut floor_price_message = String::from("");
     if !tuple.0.is_empty() { floor_price_message.push_str(&format!("{}\n", tuple.0).to_string()) };
     if !tuple.1.is_empty() { floor_price_message.push_str(&format!("{}\n", tuple.1).to_string()) };
     if !tuple.2.is_empty() { floor_price_message.push_str(&format!("{}\n", tuple.2).to_string()) };

@@ -10,14 +10,14 @@ pub struct MagicEdenResponse {
 #[serde(rename_all = "camelCase")]
 pub struct Results {
     pub symbol: String,
-    pub enabled_attributes_filters: bool,
-    pub available_attributes: Vec<AvailableAttribute>,
+    // pub enabled_attributes_filters: bool,
+    // pub available_attributes: Vec<AvailableAttribute>,
     pub floor_price: i64,
-    pub listed_count: i64,
-    pub listed_total_value: i64,
-    pub avg_price24hr: Option<f64>,
-    pub volume24hr: Option<i64>,
-    pub volume_all: i64,
+    // pub listed_count: i64,
+    // pub listed_total_value: i64,
+    // pub avg_price24hr: Option<f64>,
+    // pub volume24hr: Option<i64>,
+    // pub volume_all: i64,
 }
 
 #[derive(Deserialize, Debug)]
