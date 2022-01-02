@@ -1,4 +1,5 @@
 use reqwest::{Error, Response};
+use crate::digital_eyes::digital_eyes_all_collection_response::DigitalEyesAllCollectionResponse;
 use super::digitaleyes_stats_response::DigitalEyesResponse;
 
 
@@ -33,6 +34,48 @@ async fn get_digitaleyes_json(collection_name: String) -> Result<Response, Error
     // Perform the actual execution of the network request
     let response = client
         .get(format!("https://us-central1-digitaleyes-prod.cloudfunctions.net/offers-retriever?collection={}&price=asc", collection_name))
+        .header("accept", "*/*")
+        .header("accept-language", "en-US,en;q=0.9")
+        .header("referer", "https://digitaleyes.market/")
+        .header("user-agent", "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/96.0.4664.93 Safari/537.36")
+        .send().await;
+
+    return response;
+}
+
+
+
+pub async fn handle_digital_eyes_all_collections() -> DigitalEyesAllCollectionResponse {
+    return match tokio::spawn(get_all_digital_eyes_collections_json()).await.unwrap() {
+        Ok(digital_eyes_response) => {
+            // Handle json failure
+            match digital_eyes_response.json::<DigitalEyesAllCollectionResponse>().await {
+                Ok(json_parsed_response) => {
+                    json_parsed_response
+                },
+                Err(json_error) => {
+                    println!("Problem calling Digital Eyes all collections api json: {:?}", json_error);
+                    panic!("Error getting Digital Eyes all collections");
+                }
+            }
+        }
+        Err(error) => {
+            println!("Problem calling Magic Eden all collections api: {:?}", error);
+            panic!("Error getting Digital Eyes all collections");
+        }
+    };
+}
+
+async fn get_all_digital_eyes_collections_json() -> Result<Response, Error> {
+    // Build the client using the builder pattern
+    let client = reqwest::Client::new();
+
+    // Alternative to get all collections:
+    // https://qzlsklfacc.medianetwork.cloud/query_volume_all
+
+    // Perform the actual execution of the network request
+    let response = client
+        .get("https://us-central1-digitaleyes-prod.cloudfunctions.net/collection-retriever")
         .header("accept", "*/*")
         .header("accept-language", "en-US,en;q=0.9")
         .header("referer", "https://digitaleyes.market/")

@@ -2,6 +2,7 @@ mod solanart;
 mod digital_eyes;
 mod magiceden;
 mod alpha_art;
+mod all_collections_handling;
 
 use std::env;
 
@@ -12,10 +13,17 @@ use serenity::{
 };
 use serenity::futures::future;
 
+use all_collections_handling::initialize_pfp_collection_from_magic_eden;
+use all_collections_handling::initialize_pfp_collection_from_solanart;
 use digital_eyes::digitaleyes_api::handle_digitaleyes;
 use solanart::solanart_api::handle_solanart;
 use magiceden::magiceden_api::handle_magiceden;
+use magiceden::magiceden_api::handle_magic_eden_all_collections;
 use alpha_art::alpha_art_api::handle_alpha_art;
+use solanart::solanart_api::handle_solanart_all_collections;
+use digital_eyes::digitaleyes_api::handle_digital_eyes_all_collections;
+use all_collections_handling::initialize_pfp_collection_from_digital_eyes;
+use all_collections_handling::combine_pfp_collections;
 
 struct Handler;
 
@@ -35,7 +43,7 @@ impl EventHandler for Handler {
 
         if msg.content.len() > 7 && msg.content.get(0..7).unwrap() == ("!floor ") {
             let split_input_string_tokens: Vec<&str> = msg.content.split(" ").collect();
-            let collection_name = split_input_string_tokens[1].to_string();
+            let collection_name = split_input_string_tokens[1].to_string().to_lowercase(); //TODO: add ".to_lowercase" on the end
 
             let tuple = future::join4(
                 populate_solanart(msg.content.clone(), split_input_string_tokens.len(), &collection_name),
@@ -65,6 +73,37 @@ impl EventHandler for Handler {
 async fn main() {
     // Configure the client with your Discord bot token in the environment.
     let token = env::var("DISCORD_TOKEN").expect("Expected a token in the environment");
+
+    let solanart_all_collections = handle_solanart_all_collections().await;
+    let magic_eden_all_collections = handle_magic_eden_all_collections().await;
+    let digital_eyes_all_collections = handle_digital_eyes_all_collections().await;
+    let pfp_collections_magic_eden = initialize_pfp_collection_from_magic_eden(magic_eden_all_collections).await;
+    let pfp_collections_solanart = initialize_pfp_collection_from_solanart(solanart_all_collections).await;
+    let pfp_collections_digital_eyes = initialize_pfp_collection_from_digital_eyes(digital_eyes_all_collections).await;
+    let pfp_collections = combine_pfp_collections(pfp_collections_magic_eden, pfp_collections_solanart, pfp_collections_digital_eyes).await;
+    match pfp_collections.get("degenerate ape academy") {
+        Some(s) => {
+            match s.slug.get("SOLANART") {
+                Some(t) => {
+                    println!("Turtles solanart: {}", t)
+                },
+                _ => {}
+            }
+            match s.slug.get("DIGITAL_EYES") {
+                Some(t) => {
+                    println!("Turtles digital eyes: {}", t)
+                },
+                _ => {}
+            }
+            match s.slug.get("MAGIC_EDEN") {
+                Some(t) => {
+                    println!("Turtles magic eden: {}", t)
+                },
+                _ => {}
+            }
+        },
+        _ => {}
+    }
 
     // Create a new instance of the Client, logging in as a bot. This will
     // automatically prepend your bot token with "Bot ", which is a requirement
