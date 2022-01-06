@@ -6,7 +6,6 @@ use super::digitaleyes_stats_response::DigitalEyesResponse;
 
 pub async fn handle_digitaleyes(collection_name: String) -> String {
     return match tokio::spawn(get_digitaleyes_json(encode(&collection_name.to_owned()))).await.unwrap() {
-    //return match tokio::spawn(get_digitaleyes_json(collection_name.to_owned())).await.unwrap() {
         Ok(digitaleyes_stats_response) => {
             // Handle json failure
             match digitaleyes_stats_response.json::<DigitalEyesResponse>().await {

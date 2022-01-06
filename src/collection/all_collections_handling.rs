@@ -6,7 +6,7 @@ use fuzzy_matcher::skim::SkimMatcherV2;
 
 use crate::{handle_alpha_art, handle_digitaleyes, handle_magiceden, handle_solanart};
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct PfpCollection {
     // Solanart: name
     // Digital Eyes: name

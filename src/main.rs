@@ -21,7 +21,7 @@ use solanart::solanart_api::handle_solanart;
 use collection::all_collections_handling::check_if_collection_exists_or_give_suggestions;
 use collection::all_collections_handling::PfpCollection;
 use collection::all_collections_handling::{populate_alphaart, populate_digitaleyes, populate_magiceden, populate_solanart};
-use collection::collections_initializer::combine_pfp_collections;
+use collection::collections_initializer::combine_pfp_collections_base_magic_eden;
 use crate::collection::collections_initializer::{initialize_pfp_collection_from_alpha_art, initialize_pfp_collection_from_digital_eyes, initialize_pfp_collection_from_magic_eden, initialize_pfp_collection_from_solanart};
 
 
@@ -92,7 +92,7 @@ async fn main() {
     ).await;
 
 
-    let pfp_collections = combine_pfp_collections(tuple.0, tuple.1, tuple.2, tuple.3).await;
+    let pfp_collections = combine_pfp_collections_base_magic_eden(tuple.0, tuple.1, tuple.2, tuple.3).await;
 
     let bot = Bot {
         pfp_collections,

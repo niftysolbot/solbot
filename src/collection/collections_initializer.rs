@@ -1,3 +1,4 @@
+use std::borrow::Borrow;
 use std::collections::{HashMap};
 use crate::PfpCollection;
 use crate::alpha_art::alpha_art_api::alpha_art_process_all_collections_api;
@@ -10,41 +11,66 @@ const SOLANART: &str = "SOLANART";
 const DIGITAL_EYES: &str = "DIGITAL_EYES";
 const ALPHA_ART: &str = "ALPHA_ART";
 
-pub async fn combine_pfp_collections(magic_eden: HashMap<String, PfpCollection>,
-                                     solanart: HashMap<String, PfpCollection>,
-                                     digital_eyes: HashMap<String, PfpCollection>,
-                                     alpha_art: HashMap<String, PfpCollection>) -> HashMap<String, PfpCollection> {
+pub fn strip_backslash_if_present(mut url: String) -> String {
+    match url.chars().last() {
+        Some(u) => {
+            if u == '/' {
+                let new_url = String::from(url.pop().unwrap()).clone();
+                return new_url.clone();
+            }
+        },
+        _ => {}
+    }
+    return url.clone();
+}
+
+pub async fn combine_pfp_collections_base_magic_eden(magic_eden: HashMap<String, PfpCollection>,
+                                                     solanart: HashMap<String, PfpCollection>,
+                                                     digital_eyes: HashMap<String, PfpCollection>,
+                                                     alpha_art: HashMap<String, PfpCollection>) -> HashMap<String, PfpCollection> {
     let mut pfp_collections_combined: HashMap<String, PfpCollection> = HashMap::new();
 
-
     for (magic_eden_name, magic_eden_collection) in magic_eden {
-        //pfp_collections_combined.insert(magic_eden_name.clone(), PfpCollection::new(magic_eden_collection));
         let name = magic_eden_name.clone();
+        let website = magic_eden_collection.website.clone();
+        let twitter = magic_eden_collection.twitter.clone();
+        let discord = magic_eden_collection.discord.clone();
         let mut slug = magic_eden_collection.slug.clone();
-        // let twitter: String;
-        // match magic_eden_collection.twitter {
-        //     Some(the_twitter) => twitter = the_twitter,
-        //     _ => {}
-        // }
         match solanart.get(magic_eden_name.clone().as_str()) {
             Some(pfp_collection) => {
                 slug.insert(SOLANART.parse().unwrap(), pfp_collection.slug.get(SOLANART).unwrap().to_string());
             },
-            _ => {}
-            // None => { // Try to match by website, twitter, or discord
-            //     for (solanart_name, solanart_collection) in solanart {
-            //         let sol_website_name: &str;
-            //         if solanart_collection.website.chars().last().unwrap() == "/" {
-            //             sol_website_name = solanart_collection.website.pop();
-            //         }
-            //         else {
-            //             sol_website_name = solanart_collection.website;
-            //         }
-            //         if solanart_collection.website == magic_eden_collection.website {
-            //
-            //         }
-            //     }
-            // }
+            // _ => {}
+            None => { // Try to match by website, twitter, or discord
+                for (solanart_name, solanart_collection) in solanart.clone() {
+                    match solanart_collection.website {
+                        Some(mut sol_website_name) => {
+                            match &website {
+                                Some(source_website_name) => {
+                                    if strip_backslash_if_present(sol_website_name) == strip_backslash_if_present(source_website_name.clone()) {
+                                        slug.insert(SOLANART.parse().unwrap(), solanart_collection.slug.get(SOLANART).unwrap().to_string());
+                                    }
+                                },
+                                _ => {}
+                            }
+                        },
+                        _ => {}
+                    }
+                    match solanart_collection.twitter {
+                        Some(mut sol_twitter_name) => {
+                            match &twitter {
+                                Some(source_twitter_name) => {
+                                    if strip_backslash_if_present(sol_twitter_name) == strip_backslash_if_present(source_twitter_name.clone()) {
+                                        slug.insert(SOLANART.parse().unwrap(), solanart_collection.slug.get(SOLANART).unwrap().to_string());
+                                    }
+                                },
+                                _ => {}
+                            }
+                        },
+                        _ => {}
+                    }
+                }
+            }
         }
         match digital_eyes.get(magic_eden_name.clone().as_str()) {
             Some(pfp_collection) => {
@@ -61,9 +87,9 @@ pub async fn combine_pfp_collections(magic_eden: HashMap<String, PfpCollection>,
         pfp_collections_combined.insert(name, PfpCollection {
             name: magic_eden_name.clone(),
             slug,
-            website: magic_eden_collection.website,
-            twitter: magic_eden_collection.twitter,
-            discord: magic_eden_collection.discord,
+            website,
+            twitter,
+            discord,
             suggestions: vec![]
         });
     }
