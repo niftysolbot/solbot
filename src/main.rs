@@ -24,7 +24,8 @@ use solanart::solanart_api::handle_solanart;
 use solanart::solanart_api::handle_solanart_all_collections;
 use collection::all_collections_handling::check_if_collection_exists_or_give_suggestions;
 use collection::all_collections_handling::PfpCollection;
-use crate::collection::all_collections_handling::combine_pfp_collections;
+use collection::all_collections_handling::{populate_alphaart, populate_digitaleyes, populate_magiceden, populate_solanart};
+use collection::collections_initializer::combine_pfp_collections;
 
 
 struct Bot {
@@ -50,29 +51,23 @@ impl EventHandler for Bot {
             let collection_name = msg.content.get(7..).unwrap().to_lowercase(); //TODO: add ".to_lowercase" on the end
 
             let (does_collection_exist, suggestions) = check_if_collection_exists_or_give_suggestions(&self.pfp_collections, &*collection_name).await;
+            let discord_response_message: String;
             if !does_collection_exist {
-                let mut collection_not_found_msg = String::from("No collections found");
-                if suggestions.len() > 0 {
-                    println!("No collections found. Suggestions: {:?}", suggestions);
-                    collection_not_found_msg.push_str("\nDid you mean:\n");
-                    for sug in suggestions {
-                        collection_not_found_msg.push_str(&format!("- {}\n", sug));
-                    }
-                }
-                if let Err(why) = msg.channel_id.say(&ctx.http, collection_not_found_msg).await {
-                    println!("Error sending message: {:?}", why);
-                }
+                discord_response_message = construct_suggestions_message(suggestions).await;
             } else {
                 let tuple = future::join4(
-                    populate_solanart(msg.content.clone(), &collection_name, &self.pfp_collections),
-                    populate_magiceden(msg.content.clone(), &collection_name, &self.pfp_collections),
-                    populate_digitaleyes(msg.content.clone(), &collection_name, &self.pfp_collections),
-                    populate_alphaart(msg.content.clone(), &collection_name, &self.pfp_collections),
+                    populate_solanart( &collection_name, &self.pfp_collections),
+                    populate_magiceden( &collection_name, &self.pfp_collections),
+                    populate_digitaleyes( &collection_name, &self.pfp_collections),
+                    populate_alphaart( &collection_name, &self.pfp_collections),
                 ).await;
 
-                if let Err(why) = msg.channel_id.say(&ctx.http, construct_response_message(&tuple)).await {
-                    println!("Error sending message: {:?}", why);
-                }
+                discord_response_message = construct_response_message(&tuple);
+            }
+
+            // Send final response to discord
+            if let Err(why) = msg.channel_id.say(&ctx.http, discord_response_message).await {
+                println!("Error sending message: {:?}", why);
             }
         }
     }
@@ -86,6 +81,19 @@ impl EventHandler for Bot {
     async fn ready(&self, _: Context, ready: Ready) {
         println!("{} is connected!", ready.user.name);
     }
+}
+
+
+async fn construct_suggestions_message(suggestions: Vec<&str>) -> String {
+    let mut collection_not_found_msg = String::from("No collections found");
+    if suggestions.len() > 0 {
+        println!("No collections found. Suggestions: {:?}", suggestions);
+        collection_not_found_msg.push_str("\nDid you mean:\n");
+        for sug in suggestions {
+            collection_not_found_msg.push_str(&format!("- {}\n", sug));
+        }
+    }
+    collection_not_found_msg
 }
 
 #[tokio::main]
@@ -120,55 +128,6 @@ async fn main() {
     if let Err(why) = client.start().await {
         println!("Client error: {:?}", why);
     }
-}
-
-async fn populate_digitaleyes(msg_content: String, collection_name: &String, pfp_collections: &HashMap<String, PfpCollection>) -> String {
-        return match pfp_collections.get(collection_name) { // get the collection name from map of collections
-            Some(pfp_col) => {
-                match pfp_col.slug.get("DIGITAL_EYES") { // check if there exists an api slug mapping for Digital Eyes
-                    None => String::from(""),
-                    Some(dig_eyes_slug) => handle_digitaleyes(dig_eyes_slug.to_string()).await
-                }
-            }
-            None => String::from("")
-        }
-}
-
-
-async fn populate_solanart(msg_content: String, collection_name: &String, pfp_collections: &HashMap<String, PfpCollection>) -> String {
-        return match pfp_collections.get(collection_name) { // get the collection name from map of collections
-            Some(pfp_col) => {
-                match pfp_col.slug.get("SOLANART") { // check if there exists an api slug mapping for Solanart
-                    None => String::from(""),
-                    Some(solanart_slug) => handle_solanart(solanart_slug.to_string()).await
-                }
-            }
-            None => String::from("")
-        }
-}
-
-async fn populate_magiceden(msg_content: String, collection_name: &String, pfp_collections: &HashMap<String, PfpCollection>) -> String {
-        return match pfp_collections.get(collection_name) { // get the collection name from map of collections
-            Some(pfp_col) => {
-                match pfp_col.slug.get("MAGIC_EDEN") { // check if there exists an api slug mapping for Magic Eden
-                    None => String::from(""),
-                    Some(magic_eden_slug) => handle_magiceden(magic_eden_slug.to_string()).await
-                }
-            }
-            None => String::from("")
-        }
-}
-
-async fn populate_alphaart(msg_content: String, collection_name: &String, pfp_collections: &HashMap<String, PfpCollection>) -> String {
-        return match pfp_collections.get(collection_name) { // get the collection name from map of collections
-            Some(pfp_col) => {
-                match pfp_col.slug.get("ALPHA_ART") { // check if there exists an api slug mapping for Magic Eden
-                    None => String::from(""),
-                    Some(magic_eden_slug) => handle_alpha_art(magic_eden_slug.to_string()).await
-                }
-            }
-            None => String::from("")
-        }
 }
 
 fn construct_response_message(tuple: &(String, String, String, String)) -> String {

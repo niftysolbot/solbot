@@ -1,8 +1,9 @@
 use std::collections::{HashMap};
 use urlencoding::encode;
 use reqwest::{Error, Response};
-use super::super::collection::all_collections_handling::{initialize_pfp_collection_from_alpha_art, PfpCollection};
 use crate::alpha_art::alpha_art_all_collection_response::AlphaArtAllCollectionResponse;
+use crate::collection::collections_initializer::initialize_pfp_collection_from_alpha_art;
+use crate::PfpCollection;
 use super::alpha_art_stats_response::AlphaArtResponse;
 
 
@@ -44,7 +45,6 @@ async fn get_alpha_art_json(collection_name: String) -> Result<Response, Error> 
 
     return response;
 }
-
 
 
 pub async fn handle_alpha_art_all_collections() -> HashMap<String, PfpCollection> {
