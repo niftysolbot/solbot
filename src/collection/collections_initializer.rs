@@ -1,12 +1,8 @@
 use std::collections::{HashMap};
 use crate::PfpCollection;
-use crate::alpha_art::alpha_art_all_collection_response::AlphaArtAllCollectionResponse;
 use crate::alpha_art::alpha_art_api::alpha_art_process_all_collections_api;
-use crate::digital_eyes::digital_eyes_all_collection_response::DigitalEyesAllCollectionResponse;
 use crate::digital_eyes::digitaleyes_api::digital_eyes_process_all_collections_api;
-use crate::magiceden::magiceden_all_collection_response::MagicEdenAllCollectionsResponse;
 use crate::magiceden::magiceden_api::magic_eden_process_all_collections_api;
-use crate::solanart::solanart_all_collection_response::SolanartAllCollectionResponse;
 use crate::solanart::solanart_api::solanart_process_all_collections_api;
 
 const MAGIC_EDEN: &str = "MAGIC_EDEN";

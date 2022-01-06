@@ -1,9 +1,6 @@
-use std::collections::{HashMap};
 use urlencoding::encode;
 use reqwest::{Error, Response};
 use crate::alpha_art::alpha_art_all_collection_response::AlphaArtAllCollectionResponse;
-use crate::collection::collections_initializer::initialize_pfp_collection_from_alpha_art;
-use crate::PfpCollection;
 use super::alpha_art_stats_response::AlphaArtResponse;
 
 

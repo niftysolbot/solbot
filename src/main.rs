@@ -45,12 +45,12 @@ impl EventHandler for Bot {
 
         if msg.content.len() > 7 && msg.content.get(0..7).unwrap() == ("!floor ") {
             //let split_input_string_tokens: Vec<&str> = msg.content.split(" ").collect();
-            let collection_name = msg.content.get(7..).unwrap().to_lowercase(); //TODO: add ".to_lowercase" on the end
+            let collection_name = msg.content.get(7..).unwrap().to_lowercase();
 
             let (does_collection_exist, suggestions) = check_if_collection_exists_or_give_suggestions(&self.pfp_collections, &*collection_name).await;
             let discord_response_message: String;
             if !does_collection_exist {
-                discord_response_message = construct_suggestions_message(suggestions).await;
+                discord_response_message = construct_suggestions_message(suggestions);
             } else {
                 let tuple = future::join4(
                     populate_solanart( &collection_name, &self.pfp_collections),
@@ -58,7 +58,6 @@ impl EventHandler for Bot {
                     populate_digitaleyes( &collection_name, &self.pfp_collections),
                     populate_alphaart( &collection_name, &self.pfp_collections),
                 ).await;
-
                 discord_response_message = construct_response_message(&tuple);
             }
 
@@ -78,19 +77,6 @@ impl EventHandler for Bot {
     async fn ready(&self, _: Context, ready: Ready) {
         println!("{} is connected!", ready.user.name);
     }
-}
-
-
-async fn construct_suggestions_message(suggestions: Vec<&str>) -> String {
-    let mut collection_not_found_msg = String::from("No collections found");
-    if suggestions.len() > 0 {
-        println!("No collections found. Suggestions: {:?}", suggestions);
-        collection_not_found_msg.push_str("\nDid you mean:\n");
-        for sug in suggestions {
-            collection_not_found_msg.push_str(&format!("- {}\n", sug));
-        }
-    }
-    collection_not_found_msg
 }
 
 #[tokio::main]
@@ -125,6 +111,18 @@ async fn main() {
     if let Err(why) = client.start().await {
         println!("Client error: {:?}", why);
     }
+}
+
+fn construct_suggestions_message(suggestions: Vec<&str>) -> String {
+    let mut collection_not_found_msg = String::from("No collections found");
+    if suggestions.len() > 0 {
+        println!("No collections found. Suggestions: {:?}", suggestions);
+        collection_not_found_msg.push_str("\nDid you mean:\n");
+        for sug in suggestions {
+            collection_not_found_msg.push_str(&format!("- {}\n", sug));
+        }
+    }
+    collection_not_found_msg
 }
 
 fn construct_response_message(tuple: &(String, String, String, String)) -> String {
