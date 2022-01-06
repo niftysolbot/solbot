@@ -2,7 +2,7 @@ mod solanart;
 mod digital_eyes;
 mod magiceden;
 mod alpha_art;
-mod all_collections_handling;
+mod collection;
 
 use std::collections::HashMap;
 use std::env;
@@ -14,19 +14,17 @@ use serenity::{
 };
 use serenity::futures::future;
 
-use all_collections_handling::initialize_pfp_collection_from_magic_eden;
-use all_collections_handling::initialize_pfp_collection_from_solanart;
+use alpha_art::alpha_art_api::handle_alpha_art;
+use alpha_art::alpha_art_api::handle_alpha_art_all_collections;
 use digital_eyes::digitaleyes_api::handle_digitaleyes;
-use solanart::solanart_api::handle_solanart;
+use digital_eyes::digitaleyes_api::handle_digital_eyes_all_collections;
 use magiceden::magiceden_api::handle_magiceden;
 use magiceden::magiceden_api::handle_magic_eden_all_collections;
-use alpha_art::alpha_art_api::handle_alpha_art;
+use solanart::solanart_api::handle_solanart;
 use solanart::solanart_api::handle_solanart_all_collections;
-use digital_eyes::digitaleyes_api::handle_digital_eyes_all_collections;
-use all_collections_handling::initialize_pfp_collection_from_digital_eyes;
-use all_collections_handling::combine_pfp_collections;
-use crate::all_collections_handling::PfpCollection;
-use crate::alpha_art::alpha_art_api::handle_alpha_art_all_collections;
+use collection::all_collections_handling::check_if_collection_exists_or_give_suggestions;
+use collection::all_collections_handling::PfpCollection;
+use crate::collection::all_collections_handling::combine_pfp_collections;
 
 
 struct Bot {
@@ -51,15 +49,30 @@ impl EventHandler for Bot {
             //let split_input_string_tokens: Vec<&str> = msg.content.split(" ").collect();
             let collection_name = msg.content.get(7..).unwrap().to_lowercase(); //TODO: add ".to_lowercase" on the end
 
-            let tuple = future::join4(
-                populate_solanart(msg.content.clone(),  &collection_name, &self.pfp_collections),
-                populate_magiceden(msg.content.clone(),  &collection_name, &self.pfp_collections),
-                populate_digitaleyes(msg.content.clone(),  &collection_name, &self.pfp_collections),
-                populate_alphaart(msg.content.clone(),  &collection_name, &self.pfp_collections),
-            ).await;
+            let (does_collection_exist, suggestions) = check_if_collection_exists_or_give_suggestions(&self.pfp_collections, &*collection_name).await;
+            if !does_collection_exist {
+                let mut collection_not_found_msg = String::from("No collections found");
+                if suggestions.len() > 0 {
+                    println!("No collections found. Suggestions: {:?}", suggestions);
+                    collection_not_found_msg.push_str("\nDid you mean:\n");
+                    for sug in suggestions {
+                        collection_not_found_msg.push_str(&format!("- {}\n", sug));
+                    }
+                }
+                if let Err(why) = msg.channel_id.say(&ctx.http, collection_not_found_msg).await {
+                    println!("Error sending message: {:?}", why);
+                }
+            } else {
+                let tuple = future::join4(
+                    populate_solanart(msg.content.clone(), &collection_name, &self.pfp_collections),
+                    populate_magiceden(msg.content.clone(), &collection_name, &self.pfp_collections),
+                    populate_digitaleyes(msg.content.clone(), &collection_name, &self.pfp_collections),
+                    populate_alphaart(msg.content.clone(), &collection_name, &self.pfp_collections),
+                ).await;
 
-            if let Err(why) = msg.channel_id.say(&ctx.http, construct_response_message(&tuple)).await {
-                println!("Error sending message: {:?}", why);
+                if let Err(why) = msg.channel_id.say(&ctx.http, construct_response_message(&tuple)).await {
+                    println!("Error sending message: {:?}", why);
+                }
             }
         }
     }
@@ -89,29 +102,6 @@ async fn main() {
 
 
     let pfp_collections = combine_pfp_collections(tuple.0, tuple.1, tuple.2, tuple.3).await;
-    match pfp_collections.get("degenerate ape academy") {
-        Some(s) => {
-            match s.slug.get("SOLANART") {
-                Some(t) => {
-                    println!("Turtles solanart: {}", t)
-                },
-                _ => {}
-            }
-            match s.slug.get("DIGITAL_EYES") {
-                Some(t) => {
-                    println!("Turtles digital eyes: {}", t)
-                },
-                _ => {}
-            }
-            match s.slug.get("MAGIC_EDEN") {
-                Some(t) => {
-                    println!("Turtles magic eden: {}", t)
-                },
-                _ => {}
-            }
-        },
-        _ => {}
-    }
 
     let bot = Bot {
         pfp_collections,

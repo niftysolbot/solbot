@@ -2,7 +2,7 @@ use std::collections::{HashMap};
 use urlencoding::encode;
 use reqwest::{Error, Response};
 use crate::digital_eyes::digital_eyes_all_collection_response::DigitalEyesAllCollectionResponse;
-use crate::{initialize_pfp_collection_from_digital_eyes, PfpCollection};
+use super::super::collection::all_collections_handling::{initialize_pfp_collection_from_digital_eyes, PfpCollection};
 use super::digitaleyes_stats_response::DigitalEyesResponse;
 
 

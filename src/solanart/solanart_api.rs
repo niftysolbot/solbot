@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 use reqwest::{Error, Response};
-use crate::{initialize_pfp_collection_from_solanart, PfpCollection};
+use super::super::collection::all_collections_handling::{initialize_pfp_collection_from_solanart, PfpCollection};
 use super::solanart_stats_response::SolanartResponse;
 use super::solanart_all_collection_response::SolanartAllCollectionResponse;
 

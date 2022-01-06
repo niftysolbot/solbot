@@ -1,9 +1,12 @@
-use std::borrow::Borrow;
+use std::borrow::{Borrow};
 use std::collections::{HashMap};
-use super::solanart::solanart_all_collection_response::SolanartAllCollectionResponse;
-use super::magiceden::magiceden_all_collection_response::MagicEdenAllCollectionsResponse;
-use super::digital_eyes::digital_eyes_all_collection_response::DigitalEyesAllCollectionResponse;
-use super::alpha_art::alpha_art_all_collection_response::AlphaArtAllCollectionResponse;
+use super::super::solanart::solanart_all_collection_response::SolanartAllCollectionResponse;
+use super::super::magiceden::magiceden_all_collection_response::MagicEdenAllCollectionsResponse;
+use super::super::digital_eyes::digital_eyes_all_collection_response::DigitalEyesAllCollectionResponse;
+use super::super::alpha_art::alpha_art_all_collection_response::AlphaArtAllCollectionResponse;
+
+use fuzzy_matcher::FuzzyMatcher;
+use fuzzy_matcher::skim::SkimMatcherV2;
 
 const MAGIC_EDEN: &str = "MAGIC_EDEN";
 const SOLANART: &str = "SOLANART";
@@ -52,6 +55,22 @@ pub async fn combine_pfp_collections(magic_eden: HashMap<String, PfpCollection>,
                                      digital_eyes: HashMap<String, PfpCollection>,
                                      alpha_art: HashMap<String, PfpCollection>) -> HashMap<String, PfpCollection> {
     let mut pfp_collections_combined: HashMap<String, PfpCollection> = HashMap::new();
+    let matcher = SkimMatcherV2::default();
+
+    println!("Score1: {:8}", fuz_match(matcher.borrow(), "Shadowy Super Coder DAO", "Other Coder"));
+    println!("Score2: {:8}", fuz_match(matcher.borrow(), "Other Coder", "Shadowy Super Coder DAO"));
+    println!("Score3: {:8}", fuz_match(matcher.borrow(), "Shadowy Super Coder DAO", "Other Coder"));
+    println!("Score4: {:8}", fuz_match(matcher.borrow(), "Coder Monkeys", "Shadowy Super Coder DAO"));
+    println!("Score5: {:8}", fuz_match(matcher.borrow(), "Shadow", "Shadowy Super Coder DAO"));
+    println!("Score6: {:8}", fuz_match(matcher.borrow(), "Shadowy Super Coder DAO", "Shadow"));
+    println!("Score7: {:8}", fuz_match(matcher.borrow(), "Shadowy Super Coder", "Shadowy Super Coder DAO"));
+    println!("Score8: {:8}", fuz_match(matcher.borrow(), "Shadowy Super Coder DAO", "Shadowy Super Coder"));
+    println!("Score9: {:8}", fuz_match(matcher.borrow(), "Degen Ape Academy", "Degenerate Ape Academy"));
+    println!("Score10: {:8}", fuz_match(matcher.borrow(), "Degenerate Ape Academy", "Degen Ape Academy"));
+    println!("Score11: {:8}", fuz_match(matcher.borrow(), "Monkey Ball Gen Zero", "Monkey Ball"));
+    println!("Score12: {:8}", fuz_match(matcher.borrow(), "Monkey Ball", "Monkey Ball Gen Zero"));
+
+
     for (magic_eden_name, magic_eden_collection) in magic_eden {
         //pfp_collections_combined.insert(magic_eden_name.clone(), PfpCollection::new(magic_eden_collection));
         let name = magic_eden_name.clone();
@@ -62,9 +81,8 @@ pub async fn combine_pfp_collections(magic_eden: HashMap<String, PfpCollection>,
         //     _ => {}
         // }
         match solanart.get(magic_eden_name.clone().as_str()) {
-            Some(s) => {
-                let w = s.slug.get(SOLANART).unwrap();
-                slug.insert(SOLANART.parse().unwrap(), w.to_string());
+            Some(pfp_collection) => {
+                slug.insert(SOLANART.parse().unwrap(), pfp_collection.slug.get(SOLANART).unwrap().to_string());
             },
             _ => {}
             // None => { // Try to match by website, twitter, or discord
@@ -83,29 +101,64 @@ pub async fn combine_pfp_collections(magic_eden: HashMap<String, PfpCollection>,
             // }
         }
         match digital_eyes.get(magic_eden_name.clone().as_str()) {
-            Some(t) => {
-                let w = t.slug.get(DIGITAL_EYES).unwrap();
-                slug.insert(DIGITAL_EYES.parse().unwrap(), w.to_string());
+            Some(pfp_collection) => {
+                slug.insert(DIGITAL_EYES.parse().unwrap(), pfp_collection.slug.get(DIGITAL_EYES).unwrap().to_string());
             },
             _ => {}
         }
         match alpha_art.get(magic_eden_name.clone().as_str()) {
-            Some(t) => {
-                let w = t.slug.get(ALPHA_ART).unwrap();
-                slug.insert(ALPHA_ART.parse().unwrap(), w.to_string());
+            Some(pfp_collection) => {
+                slug.insert(ALPHA_ART.parse().unwrap(), pfp_collection.slug.get(ALPHA_ART).unwrap().to_string());
             },
             _ => {}
         }
         pfp_collections_combined.insert(name, PfpCollection {
             name: magic_eden_name.clone(),
             slug,
-            website: None,
-            twitter: None,
-            discord: None,
+            website: magic_eden_collection.website,
+            twitter: magic_eden_collection.twitter,
+            discord: magic_eden_collection.discord,
             suggestions: vec![]
         });
     }
     pfp_collections_combined
+}
+
+pub async fn check_if_collection_exists_or_give_suggestions<'a>(all_collections_map: &'a HashMap<String, PfpCollection>, collection_name: &'a str) -> (bool, Vec<&'a str>) {
+    return match all_collections_map.get(collection_name) { // get the collection name from map of collections
+        Some(_) => {
+            (true, vec![])
+        }
+        None => {
+            let mut suggestions = vec![];
+            let matcher = SkimMatcherV2::default();
+            for (collection_from_map, _c) in all_collections_map {
+                if fuz_match(matcher.borrow(), collection_from_map.as_str(), collection_name) > 200 {
+                    suggestions.push(collection_from_map.as_str())
+                }
+            }
+            (false, suggestions)
+        }
+    }
+}
+
+fn fuz_match(matcher: &SkimMatcherV2, str1: &str, str2: &str) -> u64 {
+    if str1.len() > str2.len() {
+        if let Some((score, indices)) = matcher.fuzzy_indices(str1, str2){
+            score as u64
+        }
+        else {
+            0 as u64
+        }
+    }
+    else {
+        if let Some((score, indices)) = matcher.fuzzy_indices(str2, str1){
+            score as u64
+        }
+        else {
+            0 as u64
+        }
+    }
 }
 
 

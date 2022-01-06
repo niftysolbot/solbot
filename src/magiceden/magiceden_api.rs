@@ -1,6 +1,6 @@
 use std::collections::{HashMap};
 use reqwest::{Error, Response};
-use crate::{initialize_pfp_collection_from_magic_eden, PfpCollection};
+use super::super::collection::all_collections_handling::{initialize_pfp_collection_from_magic_eden, PfpCollection};
 use super::magiceden_all_collection_response::MagicEdenAllCollectionsResponse;
 use super::magiceden_stats_response::MagicEdenResponse;
 
