@@ -42,13 +42,13 @@ async fn get_solanart_json(collection_name: String) -> Result<Response, Error> {
     return response;
 }
 
-pub async fn handle_solanart_all_collections() -> HashMap<String, PfpCollection> {
-    return match tokio::spawn(get_all_solanart_collections_json()).await.unwrap() {
+pub async fn solanart_process_all_collections_api() -> SolanartAllCollectionResponse {
+    return match get_all_solanart_collections_json().await {
         Ok(solanart_response) => {
             // Handle json failure
             match solanart_response.json::<SolanartAllCollectionResponse>().await {
                 Ok(json_parsed_response) => {
-                    initialize_pfp_collection_from_solanart(json_parsed_response).await
+                    json_parsed_response
                 },
                 Err(json_error) => {
                     println!("Problem calling Solanart all collections api json: {:?}", json_error);

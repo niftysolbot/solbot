@@ -15,17 +15,14 @@ use serenity::{
 use serenity::futures::future;
 
 use alpha_art::alpha_art_api::handle_alpha_art;
-use alpha_art::alpha_art_api::handle_alpha_art_all_collections;
 use digital_eyes::digitaleyes_api::handle_digitaleyes;
-use digital_eyes::digitaleyes_api::handle_digital_eyes_all_collections;
 use magiceden::magiceden_api::handle_magiceden;
-use magiceden::magiceden_api::handle_magic_eden_all_collections;
 use solanart::solanart_api::handle_solanart;
-use solanart::solanart_api::handle_solanart_all_collections;
 use collection::all_collections_handling::check_if_collection_exists_or_give_suggestions;
 use collection::all_collections_handling::PfpCollection;
 use collection::all_collections_handling::{populate_alphaart, populate_digitaleyes, populate_magiceden, populate_solanart};
 use collection::collections_initializer::combine_pfp_collections;
+use crate::collection::collections_initializer::{initialize_pfp_collection_from_alpha_art, initialize_pfp_collection_from_digital_eyes, initialize_pfp_collection_from_magic_eden, initialize_pfp_collection_from_solanart};
 
 
 struct Bot {
@@ -102,10 +99,10 @@ async fn main() {
     let token = env::var("DISCORD_TOKEN").expect("Expected a token in the environment");
 
     let tuple = future::join4(
-        handle_magic_eden_all_collections(),
-        handle_solanart_all_collections(),
-        handle_digital_eyes_all_collections(),
-        handle_alpha_art_all_collections()
+        initialize_pfp_collection_from_magic_eden(),
+        initialize_pfp_collection_from_solanart(),
+        initialize_pfp_collection_from_digital_eyes(),
+        initialize_pfp_collection_from_alpha_art()
     ).await;
 
 

@@ -1,9 +1,13 @@
 use std::collections::{HashMap};
 use crate::PfpCollection;
 use crate::alpha_art::alpha_art_all_collection_response::AlphaArtAllCollectionResponse;
+use crate::alpha_art::alpha_art_api::alpha_art_process_all_collections_api;
 use crate::digital_eyes::digital_eyes_all_collection_response::DigitalEyesAllCollectionResponse;
+use crate::digital_eyes::digitaleyes_api::digital_eyes_process_all_collections_api;
 use crate::magiceden::magiceden_all_collection_response::MagicEdenAllCollectionsResponse;
+use crate::magiceden::magiceden_api::magic_eden_process_all_collections_api;
 use crate::solanart::solanart_all_collection_response::SolanartAllCollectionResponse;
+use crate::solanart::solanart_api::solanart_process_all_collections_api;
 
 const MAGIC_EDEN: &str = "MAGIC_EDEN";
 const SOLANART: &str = "SOLANART";
@@ -70,9 +74,10 @@ pub async fn combine_pfp_collections(magic_eden: HashMap<String, PfpCollection>,
     pfp_collections_combined
 }
 
-pub async fn initialize_pfp_collection_from_digital_eyes(digital_eyes_collections: DigitalEyesAllCollectionResponse) -> HashMap<String, PfpCollection> {
+pub async fn initialize_pfp_collection_from_digital_eyes() -> HashMap<String, PfpCollection> {
+    let digital_eyes_response = digital_eyes_process_all_collections_api().await;
     let mut pfp_collections: HashMap<String, PfpCollection> = HashMap::new();
-    for digital_eyes_collection in digital_eyes_collections {
+    for digital_eyes_collection in digital_eyes_response {
         let mut slug: HashMap<String, String> = HashMap::new();
         slug.insert(DIGITAL_EYES.parse().unwrap(), digital_eyes_collection.name.clone());
 
@@ -86,17 +91,16 @@ pub async fn initialize_pfp_collection_from_digital_eyes(digital_eyes_collection
         };
 
         pfp_collections.insert(collection.name.to_lowercase(), collection);
-
-
     }
     println!("Digital Eyes Pfp collection size: {}", pfp_collections.len());
     pfp_collections
 }
 
 
-pub async fn initialize_pfp_collection_from_solanart(solanart_collections: SolanartAllCollectionResponse) -> HashMap<String, PfpCollection> {
+pub async fn initialize_pfp_collection_from_solanart() -> HashMap<String, PfpCollection> {
+    let solanart_response = solanart_process_all_collections_api().await;
     let mut pfp_collections: HashMap<String, PfpCollection> = HashMap::new();
-    for solanart_collection in solanart_collections {
+    for solanart_collection in solanart_response {
         let mut slug: HashMap<String, String> = HashMap::new();
         slug.insert(SOLANART.parse().unwrap(), solanart_collection.url);
 
@@ -120,9 +124,11 @@ pub async fn initialize_pfp_collection_from_solanart(solanart_collections: Solan
 }
 
 
-pub async fn initialize_pfp_collection_from_magic_eden(magic_eden: MagicEdenAllCollectionsResponse) -> HashMap<String, PfpCollection> {
+
+pub async fn initialize_pfp_collection_from_magic_eden() -> HashMap<String, PfpCollection> {
+    let magic_eden_response = magic_eden_process_all_collections_api().await;
     let mut pfp_collections: HashMap<String, PfpCollection> = HashMap::new();
-    for magic_eden_collection in magic_eden.collections {
+    for magic_eden_collection in magic_eden_response.collections {
         let mut slug: HashMap<String, String> = HashMap::new();
         slug.insert(MAGIC_EDEN.parse().unwrap(), magic_eden_collection.symbol);
         let collection = PfpCollection{
@@ -145,9 +151,10 @@ pub async fn initialize_pfp_collection_from_magic_eden(magic_eden: MagicEdenAllC
 }
 
 
-pub async fn initialize_pfp_collection_from_alpha_art(alpha_art: AlphaArtAllCollectionResponse) -> HashMap<String, PfpCollection> {
+pub async fn initialize_pfp_collection_from_alpha_art() -> HashMap<String, PfpCollection> {
+    let alpha_art_response = alpha_art_process_all_collections_api().await;
     let mut pfp_collections: HashMap<String, PfpCollection> = HashMap::new();
-    for alpha_art_collection in alpha_art.collections {
+    for alpha_art_collection in alpha_art_response.collections {
         let mut slug: HashMap<String, String> = HashMap::new();
         slug.insert(ALPHA_ART.parse().unwrap(), alpha_art_collection.slug);
         let collection = PfpCollection{

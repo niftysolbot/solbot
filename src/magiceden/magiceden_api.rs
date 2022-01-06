@@ -42,13 +42,13 @@ async fn get_magic_eden_json(collection_name: String) -> Result<Response, Error>
     return response;
 }
 
-pub async fn handle_magic_eden_all_collections() -> HashMap<String, PfpCollection> {
-    return match tokio::spawn(get_all_magic_eden_collections_json()).await.unwrap() {
+pub async fn magic_eden_process_all_collections_api() -> MagicEdenAllCollectionsResponse {
+    return match get_all_magic_eden_collections_json().await {
         Ok(magic_eden_response) => {
             // Handle json failure
             match magic_eden_response.json::<MagicEdenAllCollectionsResponse>().await {
                 Ok(json_parsed_response) => {
-                    initialize_pfp_collection_from_magic_eden(json_parsed_response).await
+                    json_parsed_response
                 },
                 Err(json_error) => {
                     println!("Problem calling Magic Eden all collections api json: {:?}", json_error);

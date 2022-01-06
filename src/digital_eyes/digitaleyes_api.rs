@@ -47,15 +47,13 @@ async fn get_digitaleyes_json(collection_name: String) -> Result<Response, Error
     return response;
 }
 
-
-
-pub async fn handle_digital_eyes_all_collections() -> HashMap<String, PfpCollection> {
-    return match tokio::spawn(get_all_digital_eyes_collections_json()).await.unwrap() {
+pub async fn digital_eyes_process_all_collections_api() -> DigitalEyesAllCollectionResponse {
+    return match get_all_digital_eyes_collections_json().await {
         Ok(digital_eyes_response) => {
             // Handle json failure
             match digital_eyes_response.json::<DigitalEyesAllCollectionResponse>().await {
                 Ok(json_parsed_response) => {
-                    initialize_pfp_collection_from_digital_eyes(json_parsed_response).await
+                    json_parsed_response
                 },
                 Err(json_error) => {
                     println!("Problem calling Digital Eyes all collections api json: {:?}", json_error);
