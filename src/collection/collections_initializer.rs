@@ -1,5 +1,6 @@
 use std::borrow::Borrow;
 use std::collections::{HashMap};
+use csv::WriterBuilder;
 use crate::PfpCollection;
 use crate::alpha_art::alpha_art_api::alpha_art_process_all_collections_api;
 use crate::digital_eyes::digitaleyes_api::digital_eyes_process_all_collections_api;
@@ -38,13 +39,16 @@ pub async fn combine_pfp_collections_base_magic_eden(magic_eden: HashMap<String,
 
     for (magic_eden_name, magic_eden_collection) in magic_eden {
         let name = magic_eden_name.clone();
-        let website = magic_eden_collection.website.clone();
-        let twitter = magic_eden_collection.twitter.clone();
-        let discord = magic_eden_collection.discord.clone();
+        let mut website = magic_eden_collection.website.clone();
+        let mut twitter = magic_eden_collection.twitter.clone();
+        let mut discord = magic_eden_collection.discord.clone();
         let mut slug = magic_eden_collection.slug.clone();
         match solanart.get(magic_eden_name.clone().as_str()) {
             Some(pfp_collection) => {
                 slug.insert(SOLANART.parse().unwrap(), pfp_collection.slug.get(SOLANART).unwrap().to_string());
+                website = if website.is_none() && pfp_collection.website.is_some() { pfp_collection.website.clone() } else { website };
+                twitter = if twitter.is_none() && pfp_collection.twitter.is_some() { pfp_collection.twitter.clone() } else { twitter };
+                discord = if discord.is_none() && pfp_collection.discord.is_some() { pfp_collection.discord.clone() } else { discord };
             },
             None => for (_, solanart_collection) in solanart.clone() {
                 match_on_attributes(SOLANART, &website, &twitter, &discord, &mut slug, solanart_collection)
@@ -53,6 +57,9 @@ pub async fn combine_pfp_collections_base_magic_eden(magic_eden: HashMap<String,
         match digital_eyes.get(magic_eden_name.clone().as_str()) {
             Some(pfp_collection) => {
                 slug.insert(DIGITAL_EYES.parse().unwrap(), pfp_collection.slug.get(DIGITAL_EYES).unwrap().to_string());
+                website = if website.is_none() && pfp_collection.website.is_some() { pfp_collection.website.clone() } else { website };
+                twitter = if twitter.is_none() && pfp_collection.twitter.is_some() { pfp_collection.twitter.clone() } else { twitter };
+                discord = if discord.is_none() && pfp_collection.discord.is_some() { pfp_collection.discord.clone() } else { discord };
             },
             None => for (_, digital_eyes_collection) in digital_eyes.clone() {
                 match_on_attributes(DIGITAL_EYES, &website, &twitter, &discord, &mut slug, digital_eyes_collection)
@@ -61,6 +68,9 @@ pub async fn combine_pfp_collections_base_magic_eden(magic_eden: HashMap<String,
         match alpha_art.get(magic_eden_name.clone().as_str()) {
             Some(pfp_collection) => {
                 slug.insert(ALPHA_ART.parse().unwrap(), pfp_collection.slug.get(ALPHA_ART).unwrap().to_string());
+                website = if website.is_none() && pfp_collection.website.is_some() { pfp_collection.website.clone() } else { website };
+                twitter = if twitter.is_none() && pfp_collection.twitter.is_some() { pfp_collection.twitter.clone() } else { twitter };
+                discord = if discord.is_none() && pfp_collection.discord.is_some() { pfp_collection.discord.clone() } else { discord };
             },
             None => for (_, alpha_art_collection) in alpha_art.clone() {
                 match_on_attributes(ALPHA_ART, &website, &twitter, &discord, &mut slug, alpha_art_collection)
@@ -75,7 +85,36 @@ pub async fn combine_pfp_collections_base_magic_eden(magic_eden: HashMap<String,
             suggestions: vec![]
         });
     }
+    write_combined_collections_to_csv(&mut pfp_collections_combined);
+
+
     pfp_collections_combined
+}
+
+fn write_combined_collections_to_csv(pfp_collections_combined: &mut HashMap<String, PfpCollection>) {
+    let mut wtr = WriterBuilder::new().from_path("combined_collections.csv").unwrap();
+    wtr.write_record(&[
+        "name",
+        "website",
+        "twitter",
+        "discord",
+        "magic_eden_slug",
+        "solanart_slug",
+        "digital_eys_slug",
+        "alpha_art_slug",
+    ]).unwrap();
+    for (_, collection) in pfp_collections_combined {
+        wtr.write_record(&[
+            collection.to_owned().name,
+            collection.to_owned().website.unwrap_or(String::from("")),
+            collection.to_owned().twitter.unwrap_or(String::from("")),
+            collection.to_owned().discord.unwrap_or(String::from("")),
+            collection.to_owned().slug.get(MAGIC_EDEN).unwrap_or(&String::from("")).to_string(),
+            collection.to_owned().slug.get(SOLANART).unwrap_or(&String::from("")).to_string(),
+            collection.to_owned().slug.get(DIGITAL_EYES).unwrap_or(&String::from("")).to_string(),
+            collection.to_owned().slug.get(ALPHA_ART).unwrap_or(&String::from("")).to_string()
+        ]).unwrap();
+    }
 }
 
 fn match_on_attributes(col_name: &str, website: &Option<String>, twitter: &Option<String>, discord: &Option<String>, slug: &mut HashMap<String, String>, pfp_collection: PfpCollection) {
