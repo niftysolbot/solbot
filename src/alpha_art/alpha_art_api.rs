@@ -12,7 +12,8 @@ pub async fn handle_alpha_art(collection_name: String) -> String {
                 Ok(json_parsed_response) => (format!("Alpha Art: {} SOL\n", json_parsed_response.floor_price.parse::<i64>().unwrap() as f64 / 1000000000 as f64)),
                 Err(json_error) => {
                     println!("Problem calling alphaart api json: {:?}", json_error);
-                    String::from(format!("Alpha Art: Could not get response. Check https://alpha.art/collection/{}", encode(&collection_name.to_owned())))
+                    //String::from(format!("Alpha Art: Could not get response. Check https://alpha.art/collection/{}", encode(&collection_name.to_owned())))
+                    String::from("")
                 }
             }
         }

@@ -12,7 +12,8 @@ pub async fn handle_digitaleyes(collection_name: String) -> String {
                 Ok(json_parsed_response) => (format!("Digital Eyes: {} SOL", json_parsed_response.price_floor as f64 / 1000000000 as f64)),
                 Err(json_error) => {
                     println!("Problem calling digitaleyes api json: {:?}", json_error);
-                    String::from(format!("Digital Eyes: Could not get response from Digitaleyes. Check https://digitaleyes.market/collections/{}", encode(&collection_name.to_owned())))
+                    //String::from(format!("Digital Eyes: Could not get response from Digitaleyes. Check https://digitaleyes.market/collections/{}", encode(&collection_name.to_owned())))
+                    String::from("")
                 }
             }
         }

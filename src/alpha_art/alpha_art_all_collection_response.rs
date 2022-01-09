@@ -16,7 +16,7 @@ pub struct Collection {
     pub title: String,
     // pub thumbnail: String,
     // pub banner: Option<String>,
-    // pub links: Vec<String>,
+    pub links: Option<Vec<String>>,
     // pub total_items: i64,
     // pub verified: bool,
     // pub symbol: Option<String>,

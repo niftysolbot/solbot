@@ -10,7 +10,7 @@ pub async fn handle_magiceden(collection_name: String) -> String {
                 Ok(json_parsed_response) => (format!("Magic Eden: {} SOL", json_parsed_response.results.floor_price as f64 / 1000000000 as f64)),
                 Err(json_error) => {
                     println!("Problem calling Magic Eden api (json parse): {:?}", json_error);
-                    String::from("Magic Eden: Could not get response from Magic Eden")
+                    String::from("")
                 }
             }
         }
@@ -22,6 +22,8 @@ pub async fn handle_magiceden(collection_name: String) -> String {
 }
 
 async fn get_magic_eden_json(collection_name: String) -> Result<Response, Error> {
+    println!("Collection name magic eden: {}", collection_name);
+
     // Build the client using the builder pattern
     let client = reqwest::Client::new();
 

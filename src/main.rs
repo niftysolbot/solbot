@@ -94,6 +94,7 @@ async fn main() {
 
     let pfp_collections = combine_pfp_collections_base_magic_eden(tuple.0, tuple.1, tuple.2, tuple.3).await;
 
+
     let bot = Bot {
         pfp_collections,
     };

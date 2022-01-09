@@ -15,8 +15,8 @@ pub fn strip_backslash_if_present(mut url: String) -> String {
     match url.chars().last() {
         Some(u) => {
             if u == '/' {
-                let new_url = String::from(url.pop().unwrap()).clone();
-                return new_url.clone();
+                let new_url = url.split_at(url.len() - 1);
+                return String::from(new_url.0);
             }
         },
         _ => {}
@@ -30,6 +30,12 @@ pub async fn combine_pfp_collections_base_magic_eden(magic_eden: HashMap<String,
                                                      alpha_art: HashMap<String, PfpCollection>) -> HashMap<String, PfpCollection> {
     let mut pfp_collections_combined: HashMap<String, PfpCollection> = HashMap::new();
 
+    println!("strip_if_present1: {}", strip_backslash_if_present(String::from("https://www.spacekitties.xyz/")));
+    println!("strip_if_present2: {}", strip_backslash_if_present(String::from("https://www.spacekitties.xyz")));
+    println!("strip_if_present2: {}", strip_backslash_if_present(String::from(".")));
+    println!("strip_if_present2: {}", strip_backslash_if_present(String::from("")));
+    println!("strip_if_present2: {}", strip_backslash_if_present(String::from("hellooo//")));
+
     for (magic_eden_name, magic_eden_collection) in magic_eden {
         let name = magic_eden_name.clone();
         let website = magic_eden_collection.website.clone();
@@ -40,49 +46,25 @@ pub async fn combine_pfp_collections_base_magic_eden(magic_eden: HashMap<String,
             Some(pfp_collection) => {
                 slug.insert(SOLANART.parse().unwrap(), pfp_collection.slug.get(SOLANART).unwrap().to_string());
             },
-            // _ => {}
-            None => { // Try to match by website, twitter, or discord
-                for (solanart_name, solanart_collection) in solanart.clone() {
-                    match solanart_collection.website {
-                        Some(mut sol_website_name) => {
-                            match &website {
-                                Some(source_website_name) => {
-                                    if strip_backslash_if_present(sol_website_name) == strip_backslash_if_present(source_website_name.clone()) {
-                                        slug.insert(SOLANART.parse().unwrap(), solanart_collection.slug.get(SOLANART).unwrap().to_string());
-                                    }
-                                },
-                                _ => {}
-                            }
-                        },
-                        _ => {}
-                    }
-                    match solanart_collection.twitter {
-                        Some(mut sol_twitter_name) => {
-                            match &twitter {
-                                Some(source_twitter_name) => {
-                                    if strip_backslash_if_present(sol_twitter_name) == strip_backslash_if_present(source_twitter_name.clone()) {
-                                        slug.insert(SOLANART.parse().unwrap(), solanart_collection.slug.get(SOLANART).unwrap().to_string());
-                                    }
-                                },
-                                _ => {}
-                            }
-                        },
-                        _ => {}
-                    }
-                }
+            None => for (_, solanart_collection) in solanart.clone() {
+                match_on_attributes(SOLANART, &website, &twitter, &discord, &mut slug, solanart_collection)
             }
         }
         match digital_eyes.get(magic_eden_name.clone().as_str()) {
             Some(pfp_collection) => {
                 slug.insert(DIGITAL_EYES.parse().unwrap(), pfp_collection.slug.get(DIGITAL_EYES).unwrap().to_string());
             },
-            _ => {}
+            None => for (_, digital_eyes_collection) in digital_eyes.clone() {
+                match_on_attributes(DIGITAL_EYES, &website, &twitter, &discord, &mut slug, digital_eyes_collection)
+            }
         }
         match alpha_art.get(magic_eden_name.clone().as_str()) {
             Some(pfp_collection) => {
                 slug.insert(ALPHA_ART.parse().unwrap(), pfp_collection.slug.get(ALPHA_ART).unwrap().to_string());
             },
-            _ => {}
+            None => for (_, alpha_art_collection) in alpha_art.clone() {
+                match_on_attributes(ALPHA_ART, &website, &twitter, &discord, &mut slug, alpha_art_collection)
+            }
         }
         pfp_collections_combined.insert(name, PfpCollection {
             name: magic_eden_name.clone(),
@@ -94,6 +76,42 @@ pub async fn combine_pfp_collections_base_magic_eden(magic_eden: HashMap<String,
         });
     }
     pfp_collections_combined
+}
+
+fn match_on_attributes(col_name: &str, website: &Option<String>, twitter: &Option<String>, discord: &Option<String>, slug: &mut HashMap<String, String>, pfp_collection: PfpCollection) {
+    match pfp_collection.website {
+        Some(mut sol_website_name) => match &website {
+            Some(source_website_name) =>
+                if sol_website_name.clone().len() > 1 && strip_backslash_if_present(sol_website_name.clone()).eq(&strip_backslash_if_present(source_website_name.clone())) {
+                    println!("Website match found: source_website_name: {}, sol_website_name: {}, collection: {}", source_website_name, sol_website_name, col_name);
+                    slug.insert(col_name.parse().unwrap(), pfp_collection.slug.get(col_name).unwrap().to_string());
+                },
+            _ => {}
+        },
+        _ => {}
+    }
+    match pfp_collection.twitter {
+        Some(mut sol_twitter_name) => match &twitter {
+            Some(source_twitter_name) =>
+                if sol_twitter_name.clone().len() > 1 && strip_backslash_if_present(sol_twitter_name.clone()).eq(&strip_backslash_if_present(source_twitter_name.clone())) {
+                    println!("Twitter match found: source_twitter_name: {}, sol_twitter_name: {}, collection: {}", source_twitter_name, sol_twitter_name.clone(), col_name.clone());
+                    slug.insert(col_name.parse().unwrap(), pfp_collection.slug.get(col_name).unwrap().to_string());
+                },
+            _ => {}
+        },
+        _ => {}
+    }
+    match pfp_collection.discord {
+        Some(mut sol_discord_name) => match &discord {
+            Some(source_discord_name) =>
+                if sol_discord_name.clone().len() > 1 && strip_backslash_if_present(sol_discord_name.clone()).eq(&strip_backslash_if_present(source_discord_name.clone())) {
+                    println!("Discord match found: source_discord_name: {}, sol_discord_name: {}, collection: {}", source_discord_name, sol_discord_name.clone(), col_name.clone());
+                    slug.insert(col_name.parse().unwrap(), pfp_collection.slug.get(col_name).unwrap().to_string());
+                },
+            _ => {}
+        },
+        _ => {}
+    }
 }
 
 pub async fn initialize_pfp_collection_from_digital_eyes() -> HashMap<String, PfpCollection> {
@@ -179,12 +197,34 @@ pub async fn initialize_pfp_collection_from_alpha_art() -> HashMap<String, PfpCo
     for alpha_art_collection in alpha_art_response.collections {
         let mut slug: HashMap<String, String> = HashMap::new();
         slug.insert(ALPHA_ART.parse().unwrap(), alpha_art_collection.slug);
+
+
+        let mut twitter: Option<String> = None;
+        let mut discord: Option<String> = None;
+        let mut website: Option<String> = None;
+        match alpha_art_collection.links {
+            Some(alpha_art_links) => {
+                for link in alpha_art_links {
+                    if link.contains("twitter.com") {
+                        twitter = Some(link);
+                    }
+                    else if link.contains("discord.gg") {
+                        discord = Some(link);
+                    }
+                    else if !link.contains("instagram.com") && !link.contains("howrare.is") {
+                        website = Some(link)
+                    }
+                }
+            }
+            _ => {}
+        }
+
         let collection = PfpCollection{
             name: alpha_art_collection.title.to_lowercase(),
             slug,
-            website: None,
-            twitter: None,
-            discord: None,
+            website,
+            twitter,
+            discord,
             suggestions: Vec::new()
         };
         match pfp_collections.get(&*collection.name.to_lowercase()) {
