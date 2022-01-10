@@ -10,7 +10,7 @@ pub async fn handle_solanart(collection_name: String) -> String {
                 Ok(json_parsed_response) => (format!("Solanart: {} SOL", json_parsed_response.floor_price as f64)),
                 Err(json_error) => {
                     println!("Problem calling Solanart api json: {:?}", json_error);
-                    String::from("Solanart: Could not get response from Solanart")
+                    String::from("")
                 }
             }
         }
@@ -22,6 +22,8 @@ pub async fn handle_solanart(collection_name: String) -> String {
 }
 
 async fn get_solanart_json(collection_name: String) -> Result<Response, Error> {
+    println!("Collection name solanart: {}", collection_name);
+
     // Build the client using the builder pattern
     let client = reqwest::Client::new();
 

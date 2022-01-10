@@ -7,10 +7,10 @@ use crate::digital_eyes::digitaleyes_api::digital_eyes_process_all_collections_a
 use crate::magiceden::magiceden_api::magic_eden_process_all_collections_api;
 use crate::solanart::solanart_api::solanart_process_all_collections_api;
 
-const MAGIC_EDEN: &str = "MAGIC_EDEN";
-const SOLANART: &str = "SOLANART";
-const DIGITAL_EYES: &str = "DIGITAL_EYES";
-const ALPHA_ART: &str = "ALPHA_ART";
+pub const MAGIC_EDEN: &str = "MAGIC_EDEN";
+pub const SOLANART: &str = "SOLANART";
+pub const DIGITAL_EYES: &str = "DIGITAL_EYES";
+pub const ALPHA_ART: &str = "ALPHA_ART";
 
 pub fn strip_backslash_if_present(mut url: String) -> String {
     match url.chars().last() {
@@ -25,59 +25,54 @@ pub fn strip_backslash_if_present(mut url: String) -> String {
     return url.clone();
 }
 
-pub async fn combine_pfp_collections_base_magic_eden(magic_eden: HashMap<String, PfpCollection>,
-                                                     solanart: HashMap<String, PfpCollection>,
-                                                     digital_eyes: HashMap<String, PfpCollection>,
-                                                     alpha_art: HashMap<String, PfpCollection>) -> HashMap<String, PfpCollection> {
+pub async fn combine_pfp_collections(master_collection: HashMap<String, PfpCollection>,
+                                     first_collection: &HashMap<String, PfpCollection>,
+                                     second_collection: &HashMap<String, PfpCollection>,
+                                     third_collection: &HashMap<String, PfpCollection>,
+                                     collection_order: (&str, &str, &str)) -> HashMap<String, PfpCollection> {
     let mut pfp_collections_combined: HashMap<String, PfpCollection> = HashMap::new();
 
-    println!("strip_if_present1: {}", strip_backslash_if_present(String::from("https://www.spacekitties.xyz/")));
-    println!("strip_if_present2: {}", strip_backslash_if_present(String::from("https://www.spacekitties.xyz")));
-    println!("strip_if_present2: {}", strip_backslash_if_present(String::from(".")));
-    println!("strip_if_present2: {}", strip_backslash_if_present(String::from("")));
-    println!("strip_if_present2: {}", strip_backslash_if_present(String::from("hellooo//")));
-
-    for (magic_eden_name, magic_eden_collection) in magic_eden {
-        let name = magic_eden_name.clone();
-        let mut website = magic_eden_collection.website.clone();
-        let mut twitter = magic_eden_collection.twitter.clone();
-        let mut discord = magic_eden_collection.discord.clone();
-        let mut slug = magic_eden_collection.slug.clone();
-        match solanart.get(magic_eden_name.clone().as_str()) {
+    for (name_from_master_collection, master_pfp_collection) in master_collection {
+        let name = name_from_master_collection.clone();
+        let mut website = master_pfp_collection.website.clone();
+        let mut twitter = master_pfp_collection.twitter.clone();
+        let mut discord = master_pfp_collection.discord.clone();
+        let mut slug = master_pfp_collection.slug.clone();
+        match first_collection.get(name_from_master_collection.clone().as_str()) {
             Some(pfp_collection) => {
-                slug.insert(SOLANART.parse().unwrap(), pfp_collection.slug.get(SOLANART).unwrap().to_string());
+                slug.insert(collection_order.0.parse().unwrap(), pfp_collection.slug.get(collection_order.0).unwrap().to_string());
                 website = if website.is_none() && pfp_collection.website.is_some() { pfp_collection.website.clone() } else { website };
                 twitter = if twitter.is_none() && pfp_collection.twitter.is_some() { pfp_collection.twitter.clone() } else { twitter };
                 discord = if discord.is_none() && pfp_collection.discord.is_some() { pfp_collection.discord.clone() } else { discord };
             },
-            None => for (_, solanart_collection) in solanart.clone() {
-                match_on_attributes(SOLANART, &website, &twitter, &discord, &mut slug, solanart_collection)
+            None => for (_, solanart_collection) in first_collection.clone() {
+                match_on_attributes(collection_order.0, &website, &twitter, &discord, &mut slug, solanart_collection)
             }
         }
-        match digital_eyes.get(magic_eden_name.clone().as_str()) {
+        match second_collection.get(name_from_master_collection.clone().as_str()) {
             Some(pfp_collection) => {
-                slug.insert(DIGITAL_EYES.parse().unwrap(), pfp_collection.slug.get(DIGITAL_EYES).unwrap().to_string());
+                slug.insert(collection_order.1.parse().unwrap(), pfp_collection.slug.get(collection_order.1).unwrap().to_string());
                 website = if website.is_none() && pfp_collection.website.is_some() { pfp_collection.website.clone() } else { website };
                 twitter = if twitter.is_none() && pfp_collection.twitter.is_some() { pfp_collection.twitter.clone() } else { twitter };
                 discord = if discord.is_none() && pfp_collection.discord.is_some() { pfp_collection.discord.clone() } else { discord };
             },
-            None => for (_, digital_eyes_collection) in digital_eyes.clone() {
-                match_on_attributes(DIGITAL_EYES, &website, &twitter, &discord, &mut slug, digital_eyes_collection)
+            None => for (_, digital_eyes_collection) in second_collection.clone() {
+                match_on_attributes(collection_order.1, &website, &twitter, &discord, &mut slug, digital_eyes_collection)
             }
         }
-        match alpha_art.get(magic_eden_name.clone().as_str()) {
+        match third_collection.get(name_from_master_collection.clone().as_str()) {
             Some(pfp_collection) => {
-                slug.insert(ALPHA_ART.parse().unwrap(), pfp_collection.slug.get(ALPHA_ART).unwrap().to_string());
+                slug.insert(collection_order.2.parse().unwrap(), pfp_collection.slug.get(collection_order.2).unwrap().to_string());
                 website = if website.is_none() && pfp_collection.website.is_some() { pfp_collection.website.clone() } else { website };
                 twitter = if twitter.is_none() && pfp_collection.twitter.is_some() { pfp_collection.twitter.clone() } else { twitter };
                 discord = if discord.is_none() && pfp_collection.discord.is_some() { pfp_collection.discord.clone() } else { discord };
             },
-            None => for (_, alpha_art_collection) in alpha_art.clone() {
-                match_on_attributes(ALPHA_ART, &website, &twitter, &discord, &mut slug, alpha_art_collection)
+            None => for (_, alpha_art_collection) in third_collection.clone() {
+                match_on_attributes(collection_order.2, &website, &twitter, &discord, &mut slug, alpha_art_collection)
             }
         }
         pfp_collections_combined.insert(name, PfpCollection {
-            name: magic_eden_name.clone(),
+            name: name_from_master_collection.clone(),
             slug,
             website,
             twitter,

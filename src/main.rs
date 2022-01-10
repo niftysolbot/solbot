@@ -21,8 +21,8 @@ use solanart::solanart_api::handle_solanart;
 use collection::all_collections_handling::check_if_collection_exists_or_give_suggestions;
 use collection::all_collections_handling::PfpCollection;
 use collection::all_collections_handling::{populate_alphaart, populate_digitaleyes, populate_magiceden, populate_solanart};
-use collection::collections_initializer::combine_pfp_collections_base_magic_eden;
-use crate::collection::collections_initializer::{initialize_pfp_collection_from_alpha_art, initialize_pfp_collection_from_digital_eyes, initialize_pfp_collection_from_magic_eden, initialize_pfp_collection_from_solanart};
+use collection::collections_initializer::combine_pfp_collections;
+use crate::collection::collections_initializer::{ALPHA_ART, DIGITAL_EYES, initialize_pfp_collection_from_alpha_art, initialize_pfp_collection_from_digital_eyes, initialize_pfp_collection_from_magic_eden, initialize_pfp_collection_from_solanart, SOLANART};
 
 
 struct Bot {
@@ -92,11 +92,16 @@ async fn main() {
     ).await;
 
 
-    let pfp_collections = combine_pfp_collections_base_magic_eden(tuple.0, tuple.1, tuple.2, tuple.3).await;
+    let pfp_collections = combine_pfp_collections(tuple.0, &tuple.1, &tuple.2, &tuple.3, (SOLANART, DIGITAL_EYES, ALPHA_ART)).await;
+    let mut pfp_collections_updated = combine_pfp_collections(pfp_collections, &tuple.1, &tuple.2, &tuple.3, (SOLANART, DIGITAL_EYES, ALPHA_ART)).await;
+
+    // Manually add degen ape for alpha art since they provide no links
+    manually_add_slug_to_pfp_collections(&mut pfp_collections_updated, String::from("degenerate ape academy"), String::from("ALPHA_ART"), String::from("dape"));
+    manually_add_slug_to_pfp_collections(&mut pfp_collections_updated, String::from("babyapes"), String::from("ALPHA_ART"), String::from("babyapes"));
 
 
     let bot = Bot {
-        pfp_collections,
+        pfp_collections: pfp_collections_updated,
     };
 
     // Create a new instance of the Client, logging in as a bot. This will
@@ -112,6 +117,14 @@ async fn main() {
     if let Err(why) = client.start().await {
         println!("Client error: {:?}", why);
     }
+}
+
+fn manually_add_slug_to_pfp_collections(pfp_collections_updated: &mut HashMap<String, PfpCollection>, master_collection_name_key: String, marketplace: String, slug: String) {
+    let mut collection_to_modify = pfp_collections_updated.get(master_collection_name_key.as_str()).unwrap().clone();
+    let mut slug_to_modify = collection_to_modify.slug;
+    slug_to_modify.insert(marketplace, slug.parse().unwrap());
+    collection_to_modify.slug = slug_to_modify;
+    pfp_collections_updated.insert(master_collection_name_key, collection_to_modify);
 }
 
 fn construct_suggestions_message(suggestions: Vec<&str>) -> String {
