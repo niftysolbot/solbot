@@ -46,7 +46,7 @@ pub async fn combine_pfp_collections(master_collection: HashMap<String, PfpColle
                 discord = if discord.is_none() && pfp_collection.discord.is_some() { pfp_collection.discord.clone() } else { discord };
             },
             None => for (_, solanart_collection) in first_collection.clone() {
-                match_on_attributes(collection_order.0, &website, &twitter, &discord, &mut slug, solanart_collection)
+                match_on_attributes(name_from_master_collection.clone().as_str(), collection_order.0, &website, &twitter, &discord, &mut slug, solanart_collection)
             }
         }
         match second_collection.get(name_from_master_collection.clone().as_str()) {
@@ -57,7 +57,7 @@ pub async fn combine_pfp_collections(master_collection: HashMap<String, PfpColle
                 discord = if discord.is_none() && pfp_collection.discord.is_some() { pfp_collection.discord.clone() } else { discord };
             },
             None => for (_, digital_eyes_collection) in second_collection.clone() {
-                match_on_attributes(collection_order.1, &website, &twitter, &discord, &mut slug, digital_eyes_collection)
+                match_on_attributes(name_from_master_collection.clone().as_str(),collection_order.1, &website, &twitter, &discord, &mut slug, digital_eyes_collection)
             }
         }
         match third_collection.get(name_from_master_collection.clone().as_str()) {
@@ -68,7 +68,7 @@ pub async fn combine_pfp_collections(master_collection: HashMap<String, PfpColle
                 discord = if discord.is_none() && pfp_collection.discord.is_some() { pfp_collection.discord.clone() } else { discord };
             },
             None => for (_, alpha_art_collection) in third_collection.clone() {
-                match_on_attributes(collection_order.2, &website, &twitter, &discord, &mut slug, alpha_art_collection)
+                match_on_attributes(name_from_master_collection.clone().as_str(),collection_order.2, &website, &twitter, &discord, &mut slug, alpha_art_collection)
             }
         }
         pfp_collections_combined.insert(name, PfpCollection {
@@ -112,13 +112,17 @@ fn write_combined_collections_to_csv(pfp_collections_combined: &mut HashMap<Stri
     }
 }
 
-fn match_on_attributes(col_name: &str, website: &Option<String>, twitter: &Option<String>, discord: &Option<String>, slug: &mut HashMap<String, String>, pfp_collection: PfpCollection) {
+fn match_on_attributes(name_from_master_collection: &str, marketplace_name: &str, website: &Option<String>, twitter: &Option<String>, discord: &Option<String>, slug: &mut HashMap<String, String>, pfp_collection: PfpCollection) {
+    if remove_whitespace(name_from_master_collection).to_lowercase() == remove_whitespace(pfp_collection.name.as_str()).to_lowercase() {
+        println!("removed_whitespace_check_true. master_col_name: {}, pfp_col_name: {}", name_from_master_collection, pfp_collection.name);
+        slug.insert(marketplace_name.parse().unwrap(), pfp_collection.slug.get(marketplace_name).unwrap().to_string());
+    }
     match pfp_collection.website {
         Some(mut sol_website_name) => match &website {
             Some(source_website_name) =>
                 if sol_website_name.clone().len() > 1 && strip_backslash_if_present(sol_website_name.clone()).eq(&strip_backslash_if_present(source_website_name.clone())) {
-                    println!("Website match found: source_website_name: {}, sol_website_name: {}, collection: {}", source_website_name, sol_website_name, col_name);
-                    slug.insert(col_name.parse().unwrap(), pfp_collection.slug.get(col_name).unwrap().to_string());
+                    println!("Website match found: source_website_name: {}, sol_website_name: {}, marketplace: {}", source_website_name, sol_website_name, marketplace_name);
+                    slug.insert(marketplace_name.parse().unwrap(), pfp_collection.slug.get(marketplace_name).unwrap().to_string());
                 },
             _ => {}
         },
@@ -128,8 +132,8 @@ fn match_on_attributes(col_name: &str, website: &Option<String>, twitter: &Optio
         Some(mut sol_twitter_name) => match &twitter {
             Some(source_twitter_name) =>
                 if sol_twitter_name.clone().len() > 1 && strip_backslash_if_present(sol_twitter_name.clone()).eq(&strip_backslash_if_present(source_twitter_name.clone())) {
-                    println!("Twitter match found: source_twitter_name: {}, sol_twitter_name: {}, collection: {}", source_twitter_name, sol_twitter_name.clone(), col_name.clone());
-                    slug.insert(col_name.parse().unwrap(), pfp_collection.slug.get(col_name).unwrap().to_string());
+                    println!("Twitter match found: source_twitter_name: {}, sol_twitter_name: {}, collection: {}", source_twitter_name, sol_twitter_name.clone(), marketplace_name.clone());
+                    slug.insert(marketplace_name.parse().unwrap(), pfp_collection.slug.get(marketplace_name).unwrap().to_string());
                 },
             _ => {}
         },
@@ -139,8 +143,8 @@ fn match_on_attributes(col_name: &str, website: &Option<String>, twitter: &Optio
         Some(mut sol_discord_name) => match &discord {
             Some(source_discord_name) =>
                 if sol_discord_name.clone().len() > 1 && strip_backslash_if_present(sol_discord_name.clone()).eq(&strip_backslash_if_present(source_discord_name.clone())) {
-                    println!("Discord match found: source_discord_name: {}, sol_discord_name: {}, collection: {}", source_discord_name, sol_discord_name.clone(), col_name.clone());
-                    slug.insert(col_name.parse().unwrap(), pfp_collection.slug.get(col_name).unwrap().to_string());
+                    println!("Discord match found: source_discord_name: {}, sol_discord_name: {}, collection: {}", source_discord_name, sol_discord_name.clone(), marketplace_name.clone());
+                    slug.insert(marketplace_name.parse().unwrap(), pfp_collection.slug.get(marketplace_name).unwrap().to_string());
                 },
             _ => {}
         },
@@ -270,4 +274,8 @@ pub async fn initialize_pfp_collection_from_alpha_art() -> HashMap<String, PfpCo
     }
     println!("Alpha Art Pfp collection size: {}", pfp_collections.len());
     pfp_collections
+}
+
+fn remove_whitespace(s: &str) -> String {
+    s.split_whitespace().collect::<String>()
 }
