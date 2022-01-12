@@ -160,7 +160,7 @@ pub async fn initialize_pfp_collection_from_digital_eyes() -> HashMap<String, Pf
         slug.insert(DIGITAL_EYES.parse().unwrap(), digital_eyes_collection.name.clone());
 
         let collection = PfpCollection{
-            name: digital_eyes_collection.name.to_lowercase(),
+            name: String::from(digital_eyes_collection.name.to_lowercase().trim()),
             slug,
             website: digital_eyes_collection.website,
             twitter: None,
@@ -183,7 +183,7 @@ pub async fn initialize_pfp_collection_from_solanart() -> HashMap<String, PfpCol
         slug.insert(SOLANART.parse().unwrap(), solanart_collection.url);
 
         let collection = PfpCollection{
-            name: solanart_collection.name.to_lowercase(),
+            name: String::from(solanart_collection.name.to_lowercase().trim()),
             slug,
             website: solanart_collection.website,
             twitter: solanart_collection.twitter,
@@ -210,7 +210,7 @@ pub async fn initialize_pfp_collection_from_magic_eden() -> HashMap<String, PfpC
         let mut slug: HashMap<String, String> = HashMap::new();
         slug.insert(MAGIC_EDEN.parse().unwrap(), magic_eden_collection.symbol);
         let collection = PfpCollection{
-            name: magic_eden_collection.name.to_lowercase(),
+            name: String::from(magic_eden_collection.name.to_lowercase().trim()),
             slug,
             website: magic_eden_collection.website,
             twitter: magic_eden_collection.twitter,
@@ -258,7 +258,7 @@ pub async fn initialize_pfp_collection_from_alpha_art() -> HashMap<String, PfpCo
         }
 
         let collection = PfpCollection{
-            name: alpha_art_collection.title.to_lowercase(),
+            name: String::from(alpha_art_collection.title.to_lowercase().trim()),
             slug,
             website,
             twitter,
