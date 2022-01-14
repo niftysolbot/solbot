@@ -1,24 +1,30 @@
 use reqwest::{Error, Response};
+use super::super::PfpCollectionEntry;
 use super::magiceden_all_collection_response::MagicEdenAllCollectionsResponse;
 use super::magiceden_stats_response::MagicEdenResponse;
 
-pub async fn handle_magiceden(collection_name: String) -> String {
-    return match tokio::spawn(get_magic_eden_json(collection_name.to_owned())).await.unwrap() {
-        Ok(magiceden_stats_response) => {
-            // Handle json failure
-            match magiceden_stats_response.json::<MagicEdenResponse>().await {
-                Ok(json_parsed_response) => (format!("Magic Eden: {} SOL", json_parsed_response.results.floor_price as f64 / 1000000000 as f64)),
-                Err(json_error) => {
-                    println!("Problem calling Magic Eden api (json parse): {:?}", json_error);
-                    String::from("")
+pub async fn handle_magiceden(pfp_collection: &PfpCollectionEntry) -> String {
+    return match pfp_collection.slug.get("MAGIC_EDEN") { // check if there exists an api slug mapping for Solanart
+        None => String::from(""),
+        Some(collection_name) => {
+            match tokio::spawn(get_magic_eden_json(collection_name.to_owned())).await.unwrap() {
+                Ok(magiceden_stats_response) => {
+                    // Handle json failure
+                    match magiceden_stats_response.json::<MagicEdenResponse>().await {
+                        Ok(json_parsed_response) => (format!("Magic Eden: {} SOL", json_parsed_response.results.floor_price as f64 / 1000000000 as f64)),
+                        Err(json_error) => {
+                            println!("Problem calling Magic Eden api (json parse): {:?}", json_error);
+                            String::from("")
+                        }
+                    }
+                }
+                Err(error) => {
+                    println!("Problem calling Magic Eden api: {:?}", error);
+                    String::from("Magic Eden: Could not get response from Magic Eden")
                 }
             }
         }
-        Err(error) => {
-            println!("Problem calling Magic Eden api: {:?}", error);
-            String::from("Magic Eden: Could not get response from Magic Eden")
-        }
-    };
+    }
 }
 
 async fn get_magic_eden_json(collection_name: String) -> Result<Response, Error> {

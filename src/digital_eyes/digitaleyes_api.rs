@@ -1,27 +1,33 @@
 use urlencoding::encode;
 use reqwest::{Error, Response};
+use super::super::PfpCollectionEntry;
 use super::digital_eyes_all_collection_response::DigitalEyesAllCollectionResponse;
 use super::digitaleyes_stats_response::DigitalEyesResponse;
 
 
-pub async fn handle_digitaleyes(collection_name: String) -> String {
-    return match tokio::spawn(get_digitaleyes_json(encode(&collection_name.to_owned()))).await.unwrap() {
-        Ok(digitaleyes_stats_response) => {
-            // Handle json failure
-            match digitaleyes_stats_response.json::<DigitalEyesResponse>().await {
-                Ok(json_parsed_response) => (format!("Digital Eyes: {} SOL", json_parsed_response.price_floor as f64 / 1000000000 as f64)),
-                Err(json_error) => {
-                    println!("Problem calling digitaleyes api json: {:?}", json_error);
-                    //String::from(format!("Digital Eyes: Could not get response from Digitaleyes. Check https://digitaleyes.market/collections/{}", encode(&collection_name.to_owned())))
-                    String::from("")
+pub async fn handle_digitaleyes(pfp_collection: &PfpCollectionEntry) -> String {
+    return match pfp_collection.slug.get("DIGITAL_EYES") { // check if there exists an api slug mapping for Solanart
+        None => String::from(""),
+        Some(collection_name) => {
+            match tokio::spawn(get_digitaleyes_json(encode(&collection_name.to_owned()))).await.unwrap() {
+                Ok(digitaleyes_stats_response) => {
+                    // Handle json failure
+                    match digitaleyes_stats_response.json::<DigitalEyesResponse>().await {
+                        Ok(json_parsed_response) => (format!("Digital Eyes: {} SOL", json_parsed_response.price_floor as f64 / 1000000000 as f64)),
+                        Err(json_error) => {
+                            println!("Problem calling digitaleyes api json: {:?}", json_error);
+                            //String::from(format!("Digital Eyes: Could not get response from Digitaleyes. Check https://digitaleyes.market/collections/{}", encode(&collection_name.to_owned())))
+                            String::from("")
+                        }
+                    }
+                }
+                Err(error) => {
+                    println!("Problem calling digitaleyes api: {:?}", error);
+                    String::from("Digital Eyes: Could not get response from Digitaleyes")
                 }
             }
         }
-        Err(error) => {
-            println!("Problem calling digitaleyes api: {:?}", error);
-            String::from("Digital Eyes: Could not get response from Digitaleyes")
-        }
-    };
+    }
 }
 
 async fn get_digitaleyes_json(collection_name: String) -> Result<Response, Error> {

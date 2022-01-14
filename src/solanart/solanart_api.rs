@@ -1,24 +1,30 @@
 use reqwest::{Error, Response};
+use super::super::PfpCollectionEntry;
 use super::solanart_stats_response::SolanartResponse;
 use super::solanart_all_collection_response::SolanartAllCollectionResponse;
 
-pub async fn handle_solanart(collection_name: String) -> String {
-    return match tokio::spawn(get_solanart_json(collection_name.to_owned())).await.unwrap() {
-        Ok(solanart_stats_response) => {
-            // Handle json failure
-            match solanart_stats_response.json::<SolanartResponse>().await {
-                Ok(json_parsed_response) => (format!("Solanart: {} SOL", json_parsed_response.floor_price as f64)),
-                Err(json_error) => {
-                    println!("Problem calling Solanart api json: {:?}", json_error);
-                    String::from("")
+pub async fn handle_solanart(pfp_collection: &PfpCollectionEntry) -> String {
+    return match pfp_collection.slug.get("SOLANART") { // check if there exists an api slug mapping for Solanart
+        None => String::from(""),
+        Some(collection_name) => {
+            match tokio::spawn(get_solanart_json(collection_name.to_owned())).await.unwrap() {
+                Ok(solanart_stats_response) => {
+                    // Handle json failure
+                    match solanart_stats_response.json::<SolanartResponse>().await {
+                        Ok(json_parsed_response) => (format!("Solanart: {} SOL", json_parsed_response.floor_price as f64)),
+                        Err(json_error) => {
+                            println!("Problem calling Solanart api json: {:?}", json_error);
+                            String::from("")
+                        }
+                    }
+                }
+                Err(error) => {
+                    println!("Problem calling Solanart api: {:?}", error);
+                    String::from("Solanart: Could not get response from Solanart")
                 }
             }
         }
-        Err(error) => {
-            println!("Problem calling Solanart api: {:?}", error);
-            String::from("Solanart: Could not get response from Solanart")
-        }
-    };
+    }
 }
 
 async fn get_solanart_json(collection_name: String) -> Result<Response, Error> {

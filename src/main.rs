@@ -18,12 +18,12 @@ use alpha_art::alpha_art_api::handle_alpha_art;
 use digital_eyes::digitaleyes_api::handle_digitaleyes;
 use magiceden::magiceden_api::handle_magiceden;
 use solanart::solanart_api::handle_solanart;
-use collection::all_collections_handling::{PfpCollection, check_if_collection_exists_or_give_suggestions, populate_alphaart, populate_digitaleyes, populate_magiceden, populate_solanart};
+use collection::all_collections_handling::{PfpCollectionEntry, check_if_collection_exists_or_give_suggestions};
 use collection::collections_initializer::{ALPHA_ART, DIGITAL_EYES, SOLANART, combine_pfp_collections, initialize_pfp_collection_from_alpha_art, initialize_pfp_collection_from_digital_eyes, initialize_pfp_collection_from_magic_eden, initialize_pfp_collection_from_solanart};
 
 
 struct Bot {
-    pfp_collections: HashMap<String, PfpCollection>,
+    pfp_collections: HashMap<String, PfpCollectionEntry>,
 }
 
 #[async_trait]
@@ -44,18 +44,21 @@ impl EventHandler for Bot {
             //let split_input_string_tokens: Vec<&str> = msg.content.split(" ").collect();
             let collection_name = msg.content.get(7..).unwrap().to_lowercase();
 
-            let (does_collection_exist, suggestions) = check_if_collection_exists_or_give_suggestions(&self.pfp_collections, &*collection_name).await;
             let discord_response_message: String;
-            if !does_collection_exist {
-                discord_response_message = construct_suggestions_message(suggestions);
-            } else {
-                let tuple = future::join4(
-                    populate_solanart( &collection_name, &self.pfp_collections),
-                    populate_magiceden( &collection_name, &self.pfp_collections),
-                    populate_digitaleyes( &collection_name, &self.pfp_collections),
-                    populate_alphaart( &collection_name, &self.pfp_collections),
-                ).await;
-                discord_response_message = construct_response_message(&tuple);
+            let (pfp_collection_option, suggestions) = check_if_collection_exists_or_give_suggestions(&self.pfp_collections, &*collection_name).await;
+            match pfp_collection_option {
+                Some(pfp_collection_entry) => {
+                    let tuple = future::join4(
+                        handle_solanart( pfp_collection_entry),
+                        handle_magiceden( pfp_collection_entry),
+                        handle_digitaleyes( pfp_collection_entry),
+                        handle_alpha_art( pfp_collection_entry),
+                    ).await;
+                    discord_response_message = construct_response_message(&tuple);
+                }
+                None => {
+                    discord_response_message = construct_suggestions_message(suggestions);
+                }
             }
 
             // Send final response to discord
@@ -94,7 +97,6 @@ async fn main() {
 
     // Manually add degen ape for alpha art since they provide no links
     manually_add_slug_to_pfp_collections(&mut pfp_collections_updated, String::from("degenerate ape academy"), String::from("ALPHA_ART"), String::from("dape"));
-    manually_add_slug_to_pfp_collections(&mut pfp_collections_updated, String::from("babyapes"), String::from("ALPHA_ART"), String::from("babyapes"));
 
 
     let bot = Bot {
@@ -116,7 +118,7 @@ async fn main() {
     }
 }
 
-fn manually_add_slug_to_pfp_collections(pfp_collections_updated: &mut HashMap<String, PfpCollection>, master_collection_name_key: String, marketplace: String, slug: String) {
+fn manually_add_slug_to_pfp_collections(pfp_collections_updated: &mut HashMap<String, PfpCollectionEntry>, master_collection_name_key: String, marketplace: String, slug: String) {
     let mut collection_to_modify = pfp_collections_updated.get(master_collection_name_key.as_str()).unwrap().clone();
     let mut slug_to_modify = collection_to_modify.slug;
     slug_to_modify.insert(marketplace, slug.parse().unwrap());

@@ -1,27 +1,33 @@
 use urlencoding::encode;
 use reqwest::{Error, Response};
 use crate::alpha_art::alpha_art_all_collection_response::AlphaArtAllCollectionResponse;
+use super::super::PfpCollectionEntry;
 use super::alpha_art_stats_response::AlphaArtResponse;
 
 
-pub async fn handle_alpha_art(collection_name: String) -> String {
-    return match tokio::spawn(get_alpha_art_json(encode(&collection_name.to_owned()))).await.unwrap() {
-        Ok(alpha_art_stats_response) => {
-            // Handle json failure
-            match alpha_art_stats_response.json::<AlphaArtResponse>().await {
-                Ok(json_parsed_response) => (format!("Alpha Art: {} SOL\n", json_parsed_response.floor_price.parse::<i64>().unwrap() as f64 / 1000000000 as f64)),
-                Err(json_error) => {
-                    println!("Problem calling alphaart api json: {:?}", json_error);
-                    //String::from(format!("Alpha Art: Could not get response. Check https://alpha.art/collection/{}", encode(&collection_name.to_owned())))
-                    String::from("")
+pub async fn handle_alpha_art(pfp_collection: &PfpCollectionEntry) -> String {
+    return match pfp_collection.slug.get("ALPHA_ART") { // check if there exists an api slug mapping for Solanart
+        None => String::from(""),
+        Some(collection_name) => {
+            match tokio::spawn(get_alpha_art_json(encode(&collection_name.to_owned()))).await.unwrap() {
+                Ok(alpha_art_stats_response) => {
+                    // Handle json failure
+                    match alpha_art_stats_response.json::<AlphaArtResponse>().await {
+                        Ok(json_parsed_response) => (format!("Alpha Art: {} SOL\n", json_parsed_response.floor_price.parse::<i64>().unwrap() as f64 / 1000000000 as f64)),
+                        Err(json_error) => {
+                            println!("Problem calling alphaart api json: {:?}", json_error);
+                            //String::from(format!("Alpha Art: Could not get response. Check https://alpha.art/collection/{}", encode(&collection_name.to_owned())))
+                            String::from("")
+                        }
+                    }
+                }
+                Err(error) => {
+                    println!("Problem calling alphaart api: {:?}", error);
+                    String::from("Alpha Art: Could not get response from Alpha Art")
                 }
             }
         }
-        Err(error) => {
-            println!("Problem calling alphaart api: {:?}", error);
-            String::from("Alpha Art: Could not get response from Alpha Art")
-        }
-    };
+    }
 }
 
 async fn get_alpha_art_json(collection_name: String) -> Result<Response, Error> {

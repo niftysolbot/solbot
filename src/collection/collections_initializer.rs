@@ -1,7 +1,7 @@
 use std::borrow::Borrow;
 use std::collections::{HashMap};
 use csv::WriterBuilder;
-use crate::PfpCollection;
+use crate::PfpCollectionEntry;
 use crate::alpha_art::alpha_art_api::alpha_art_process_all_collections_api;
 use crate::digital_eyes::digitaleyes_api::digital_eyes_process_all_collections_api;
 use crate::magiceden::magiceden_api::magic_eden_process_all_collections_api;
@@ -25,12 +25,12 @@ pub fn strip_backslash_if_present(mut url: String) -> String {
     return url.clone();
 }
 
-pub async fn combine_pfp_collections(master_collection: HashMap<String, PfpCollection>,
-                                     first_collection: &HashMap<String, PfpCollection>,
-                                     second_collection: &HashMap<String, PfpCollection>,
-                                     third_collection: &HashMap<String, PfpCollection>,
-                                     collection_order: (&str, &str, &str)) -> HashMap<String, PfpCollection> {
-    let mut pfp_collections_combined: HashMap<String, PfpCollection> = HashMap::new();
+pub async fn combine_pfp_collections(master_collection: HashMap<String, PfpCollectionEntry>,
+                                     first_collection: &HashMap<String, PfpCollectionEntry>,
+                                     second_collection: &HashMap<String, PfpCollectionEntry>,
+                                     third_collection: &HashMap<String, PfpCollectionEntry>,
+                                     collection_order: (&str, &str, &str)) -> HashMap<String, PfpCollectionEntry> {
+    let mut pfp_collections_combined: HashMap<String, PfpCollectionEntry> = HashMap::new();
 
     for (name_from_master_collection, master_pfp_collection) in master_collection {
         let name = name_from_master_collection.clone();
@@ -71,7 +71,7 @@ pub async fn combine_pfp_collections(master_collection: HashMap<String, PfpColle
                 match_on_attributes(name_from_master_collection.clone().as_str(),collection_order.2, &website, &twitter, &discord, &mut slug, alpha_art_collection)
             }
         }
-        pfp_collections_combined.insert(name, PfpCollection {
+        pfp_collections_combined.insert(name, PfpCollectionEntry {
             name: name_from_master_collection.clone(),
             slug,
             website,
@@ -86,7 +86,7 @@ pub async fn combine_pfp_collections(master_collection: HashMap<String, PfpColle
     pfp_collections_combined
 }
 
-fn write_combined_collections_to_csv(pfp_collections_combined: &mut HashMap<String, PfpCollection>) {
+fn write_combined_collections_to_csv(pfp_collections_combined: &mut HashMap<String, PfpCollectionEntry>) {
     let mut wtr = WriterBuilder::new().from_path("combined_collections.csv").unwrap();
     wtr.write_record(&[
         "name",
@@ -112,7 +112,7 @@ fn write_combined_collections_to_csv(pfp_collections_combined: &mut HashMap<Stri
     }
 }
 
-fn match_on_attributes(name_from_master_collection: &str, marketplace_name: &str, website: &Option<String>, twitter: &Option<String>, discord: &Option<String>, slug: &mut HashMap<String, String>, pfp_collection: PfpCollection) {
+fn match_on_attributes(name_from_master_collection: &str, marketplace_name: &str, website: &Option<String>, twitter: &Option<String>, discord: &Option<String>, slug: &mut HashMap<String, String>, pfp_collection: PfpCollectionEntry) {
     if remove_whitespace(name_from_master_collection).to_lowercase() == remove_whitespace(pfp_collection.name.as_str()).to_lowercase() {
         println!("removed_whitespace_check_true. master_col_name: {}, pfp_col_name: {}", name_from_master_collection, pfp_collection.name);
         slug.insert(marketplace_name.parse().unwrap(), pfp_collection.slug.get(marketplace_name).unwrap().to_string());
@@ -152,14 +152,14 @@ fn match_on_attributes(name_from_master_collection: &str, marketplace_name: &str
     }
 }
 
-pub async fn initialize_pfp_collection_from_digital_eyes() -> HashMap<String, PfpCollection> {
+pub async fn initialize_pfp_collection_from_digital_eyes() -> HashMap<String, PfpCollectionEntry> {
     let digital_eyes_response = digital_eyes_process_all_collections_api().await;
-    let mut pfp_collections: HashMap<String, PfpCollection> = HashMap::new();
+    let mut pfp_collections: HashMap<String, PfpCollectionEntry> = HashMap::new();
     for digital_eyes_collection in digital_eyes_response {
         let mut slug: HashMap<String, String> = HashMap::new();
         slug.insert(DIGITAL_EYES.parse().unwrap(), digital_eyes_collection.name.clone());
 
-        let collection = PfpCollection{
+        let collection = PfpCollectionEntry {
             name: String::from(digital_eyes_collection.name.to_lowercase().trim()),
             slug,
             website: digital_eyes_collection.website,
@@ -175,14 +175,14 @@ pub async fn initialize_pfp_collection_from_digital_eyes() -> HashMap<String, Pf
 }
 
 
-pub async fn initialize_pfp_collection_from_solanart() -> HashMap<String, PfpCollection> {
+pub async fn initialize_pfp_collection_from_solanart() -> HashMap<String, PfpCollectionEntry> {
     let solanart_response = solanart_process_all_collections_api().await;
-    let mut pfp_collections: HashMap<String, PfpCollection> = HashMap::new();
+    let mut pfp_collections: HashMap<String, PfpCollectionEntry> = HashMap::new();
     for solanart_collection in solanart_response {
         let mut slug: HashMap<String, String> = HashMap::new();
         slug.insert(SOLANART.parse().unwrap(), solanart_collection.url);
 
-        let collection = PfpCollection{
+        let collection = PfpCollectionEntry {
             name: String::from(solanart_collection.name.to_lowercase().trim()),
             slug,
             website: solanart_collection.website,
@@ -203,13 +203,13 @@ pub async fn initialize_pfp_collection_from_solanart() -> HashMap<String, PfpCol
 
 
 
-pub async fn initialize_pfp_collection_from_magic_eden() -> HashMap<String, PfpCollection> {
+pub async fn initialize_pfp_collection_from_magic_eden() -> HashMap<String, PfpCollectionEntry> {
     let magic_eden_response = magic_eden_process_all_collections_api().await;
-    let mut pfp_collections: HashMap<String, PfpCollection> = HashMap::new();
+    let mut pfp_collections: HashMap<String, PfpCollectionEntry> = HashMap::new();
     for magic_eden_collection in magic_eden_response.collections {
         let mut slug: HashMap<String, String> = HashMap::new();
         slug.insert(MAGIC_EDEN.parse().unwrap(), magic_eden_collection.symbol);
-        let collection = PfpCollection{
+        let collection = PfpCollectionEntry {
             name: String::from(magic_eden_collection.name.to_lowercase().trim()),
             slug,
             website: magic_eden_collection.website,
@@ -229,9 +229,9 @@ pub async fn initialize_pfp_collection_from_magic_eden() -> HashMap<String, PfpC
 }
 
 
-pub async fn initialize_pfp_collection_from_alpha_art() -> HashMap<String, PfpCollection> {
+pub async fn initialize_pfp_collection_from_alpha_art() -> HashMap<String, PfpCollectionEntry> {
     let alpha_art_response = alpha_art_process_all_collections_api().await;
-    let mut pfp_collections: HashMap<String, PfpCollection> = HashMap::new();
+    let mut pfp_collections: HashMap<String, PfpCollectionEntry> = HashMap::new();
     for alpha_art_collection in alpha_art_response.collections {
         let mut slug: HashMap<String, String> = HashMap::new();
         slug.insert(ALPHA_ART.parse().unwrap(), alpha_art_collection.slug);
@@ -257,7 +257,7 @@ pub async fn initialize_pfp_collection_from_alpha_art() -> HashMap<String, PfpCo
             _ => {}
         }
 
-        let collection = PfpCollection{
+        let collection = PfpCollectionEntry {
             name: String::from(alpha_art_collection.title.to_lowercase().trim()),
             slug,
             website,

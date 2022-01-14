@@ -9,7 +9,7 @@ use super::super::magiceden::magiceden_api::handle_magiceden;
 use super::super::solanart::solanart_api::handle_solanart;
 
 #[derive(Debug, Clone)]
-pub struct PfpCollection {
+pub struct PfpCollectionEntry {
     // Solanart: name
     // Digital Eyes: name
     // Magic Eden: name
@@ -45,59 +45,10 @@ pub struct PfpCollection {
     pub suggestions: Vec<String>
 }
 
-pub async fn populate_digitaleyes(collection_name: &String, pfp_collections: &HashMap<String, PfpCollection>) -> String {
-    return match pfp_collections.get(collection_name) { // get the collection name from map of collections
-        Some(pfp_col) => {
-            match pfp_col.slug.get("DIGITAL_EYES") { // check if there exists an api slug mapping for Digital Eyes
-                None => String::from(""),
-                Some(dig_eyes_slug) => handle_digitaleyes(dig_eyes_slug.to_string()).await
-            }
-        }
-        None => String::from("")
-    }
-}
-
-
-pub async fn populate_solanart(collection_name: &String, pfp_collections: &HashMap<String, PfpCollection>) -> String {
-    return match pfp_collections.get(collection_name) { // get the collection name from map of collections
-        Some(pfp_col) => {
-            match pfp_col.slug.get("SOLANART") { // check if there exists an api slug mapping for Solanart
-                None => String::from(""),
-                Some(solanart_slug) => handle_solanart(solanart_slug.to_string()).await
-            }
-        }
-        None => String::from("")
-    }
-}
-
-pub async fn populate_magiceden(collection_name: &String, pfp_collections: &HashMap<String, PfpCollection>) -> String {
-    return match pfp_collections.get(collection_name) { // get the collection name from map of collections
-        Some(pfp_col) => {
-            match pfp_col.slug.get("MAGIC_EDEN") { // check if there exists an api slug mapping for Magic Eden
-                None => String::from(""),
-                Some(magic_eden_slug) => handle_magiceden(magic_eden_slug.to_string()).await
-            }
-        }
-        None => String::from("")
-    }
-}
-
-pub async fn populate_alphaart(collection_name: &String, pfp_collections: &HashMap<String, PfpCollection>) -> String {
-    return match pfp_collections.get(collection_name) { // get the collection name from map of collections
-        Some(pfp_col) => {
-            match pfp_col.slug.get("ALPHA_ART") { // check if there exists an api slug mapping for Magic Eden
-                None => String::from(""),
-                Some(alpha_art_slug) => handle_alpha_art(alpha_art_slug.to_string()).await
-            }
-        }
-        None => String::from("")
-    }
-}
-
-pub async fn check_if_collection_exists_or_give_suggestions<'a>(all_collections_map: &'a HashMap<String, PfpCollection>, collection_name: &'a str) -> (bool, Vec<&'a str>) {
+pub async fn check_if_collection_exists_or_give_suggestions<'a>(all_collections_map: &'a HashMap<String, PfpCollectionEntry>, collection_name: &'a str) -> (Option<&'a PfpCollectionEntry>, Vec<&'a str>) {
     return match all_collections_map.get(collection_name) { // get the collection name from map of collections
-        Some(_) => {
-            (true, vec![])
+        Some(pfp_collection) => {
+            (Some(pfp_collection), vec![])
         }
         None => {
             let mut suggestions = vec![];
@@ -107,7 +58,7 @@ pub async fn check_if_collection_exists_or_give_suggestions<'a>(all_collections_
                     suggestions.push(collection_from_map.as_str())
                 }
             }
-            (false, suggestions)
+            (None, suggestions)
         }
     }
 }
