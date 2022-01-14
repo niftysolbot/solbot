@@ -18,11 +18,8 @@ use alpha_art::alpha_art_api::handle_alpha_art;
 use digital_eyes::digitaleyes_api::handle_digitaleyes;
 use magiceden::magiceden_api::handle_magiceden;
 use solanart::solanart_api::handle_solanart;
-use collection::all_collections_handling::check_if_collection_exists_or_give_suggestions;
-use collection::all_collections_handling::PfpCollection;
-use collection::all_collections_handling::{populate_alphaart, populate_digitaleyes, populate_magiceden, populate_solanart};
-use collection::collections_initializer::combine_pfp_collections;
-use crate::collection::collections_initializer::{ALPHA_ART, DIGITAL_EYES, initialize_pfp_collection_from_alpha_art, initialize_pfp_collection_from_digital_eyes, initialize_pfp_collection_from_magic_eden, initialize_pfp_collection_from_solanart, SOLANART};
+use collection::all_collections_handling::{PfpCollection, check_if_collection_exists_or_give_suggestions, populate_alphaart, populate_digitaleyes, populate_magiceden, populate_solanart};
+use collection::collections_initializer::{ALPHA_ART, DIGITAL_EYES, SOLANART, combine_pfp_collections, initialize_pfp_collection_from_alpha_art, initialize_pfp_collection_from_digital_eyes, initialize_pfp_collection_from_magic_eden, initialize_pfp_collection_from_solanart};
 
 
 struct Bot {

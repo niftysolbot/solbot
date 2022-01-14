@@ -1,6 +1,6 @@
 use urlencoding::encode;
 use reqwest::{Error, Response};
-use crate::digital_eyes::digital_eyes_all_collection_response::DigitalEyesAllCollectionResponse;
+use super::digital_eyes_all_collection_response::DigitalEyesAllCollectionResponse;
 use super::digitaleyes_stats_response::DigitalEyesResponse;
 
 

@@ -3,8 +3,10 @@ use std::collections::{HashMap};
 
 use fuzzy_matcher::FuzzyMatcher;
 use fuzzy_matcher::skim::SkimMatcherV2;
-
-use crate::{handle_alpha_art, handle_digitaleyes, handle_magiceden, handle_solanart};
+use super::super::alpha_art::alpha_art_api::handle_alpha_art;
+use super::super::digital_eyes::digitaleyes_api::handle_digitaleyes;
+use super::super::magiceden::magiceden_api::handle_magiceden;
+use super::super::solanart::solanart_api::handle_solanart;
 
 #[derive(Debug, Clone)]
 pub struct PfpCollection {
