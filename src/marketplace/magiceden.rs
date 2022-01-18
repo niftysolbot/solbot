@@ -1,0 +1,3 @@
+pub mod magiceden_api;
+mod magiceden_all_collection_response;
+mod magiceden_stats_response;

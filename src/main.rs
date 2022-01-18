@@ -1,8 +1,5 @@
-mod solanart;
-mod digital_eyes;
-mod magiceden;
-mod alpha_art;
 mod collection;
+mod marketplace;
 
 use std::collections::HashMap;
 use std::env;
@@ -14,12 +11,14 @@ use serenity::{
 };
 use serenity::futures::future;
 
-use alpha_art::alpha_art_api::handle_alpha_art;
-use digital_eyes::digitaleyes_api::handle_digitaleyes;
-use magiceden::magiceden_api::handle_magiceden;
-use solanart::solanart_api::handle_solanart;
-use collection::all_collections_handling::{PfpCollectionEntry, check_if_collection_exists_or_give_suggestions};
-use collection::collections_initializer::{ALPHA_ART, DIGITAL_EYES, SOLANART, combine_pfp_collections, initialize_pfp_collection_from_alpha_art, initialize_pfp_collection_from_digital_eyes, initialize_pfp_collection_from_magic_eden, initialize_pfp_collection_from_solanart};
+use marketplace::alpha_art::alpha_art_api::{AlphaArt};
+use marketplace::marketplace::MarketplaceCollection;
+use collection::all_collections_handling::{check_if_collection_exists_or_give_suggestions, PfpCollectionEntry};
+use collection::collections_initializer::{ALPHA_ART, combine_pfp_collections, DIGITAL_EYES};
+use crate::collection::collections_initializer::SOLANART;
+use crate::marketplace::digital_eyes::digitaleyes_api::DigitalEyes;
+use crate::marketplace::magiceden::magiceden_api::MagicEden;
+use crate::marketplace::solanart::solanart_api::Solanart;
 
 
 struct Bot {
@@ -46,13 +45,18 @@ impl EventHandler for Bot {
 
             let discord_response_message: String;
             let (pfp_collection_option, suggestions) = check_if_collection_exists_or_give_suggestions(&self.pfp_collections, &*collection_name).await;
+            let mut alpha_art: AlphaArt = MarketplaceCollection::new(String::from("ALPHA_ART"));
+            let mut digital_eyes: DigitalEyes = MarketplaceCollection::new(String::from("DIGITAL_EYES"));
+            let mut magic_eden: MagicEden = MarketplaceCollection::new(String::from("MAGIC_EDEN"));
+            let mut solanart: Solanart = MarketplaceCollection::new(String::from("SOLANART"));
+
             match pfp_collection_option {
                 Some(pfp_collection_entry) => {
                     let tuple = future::join4(
-                        handle_solanart( pfp_collection_entry),
-                        handle_magiceden( pfp_collection_entry),
-                        handle_digitaleyes( pfp_collection_entry),
-                        handle_alpha_art( pfp_collection_entry),
+                        solanart.get_floor_from_api( pfp_collection_entry),
+                        magic_eden.get_floor_from_api( pfp_collection_entry),
+                        digital_eyes.get_floor_from_api( pfp_collection_entry),
+                        alpha_art.get_floor_from_api( pfp_collection_entry),
                     ).await;
                     discord_response_message = construct_response_message(&tuple);
                 }
@@ -84,11 +88,16 @@ async fn main() {
     // Configure the client with your Discord bot token in the environment.
     let token = env::var("DISCORD_TOKEN").expect("Expected a token in the environment");
 
+    let mut alpha_art: AlphaArt = MarketplaceCollection::new(String::from("ALPHA_ART"));
+    let mut digital_eyes: DigitalEyes = MarketplaceCollection::new(String::from("DIGITAL_EYES"));
+    let mut magic_eden: MagicEden = MarketplaceCollection::new(String::from("MAGIC_EDEN"));
+    let mut solanart: Solanart = MarketplaceCollection::new(String::from("SOLANART"));
+
     let tuple = future::join4(
-        initialize_pfp_collection_from_magic_eden(),
-        initialize_pfp_collection_from_solanart(),
-        initialize_pfp_collection_from_digital_eyes(),
-        initialize_pfp_collection_from_alpha_art()
+        magic_eden.initialize_pfp_collections(),
+        solanart.initialize_pfp_collections(),
+        digital_eyes.initialize_pfp_collections(),
+        alpha_art.initialize_pfp_collections()
     ).await;
 
 
