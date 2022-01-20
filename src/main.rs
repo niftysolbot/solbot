@@ -10,6 +10,7 @@ use serenity::{
     prelude::*,
 };
 use serenity::futures::future;
+use tokio::join;
 
 use marketplace::alpha_art::alpha_art_api::{AlphaArt};
 use marketplace::marketplace::MarketplaceCollection;
@@ -52,12 +53,13 @@ impl EventHandler for Bot {
 
             match pfp_collection_option {
                 Some(pfp_collection_entry) => {
-                    let tuple = future::join4(
+                    let (sol, mag, dig, alph) = join!(
                         solanart.get_floor_from_api( pfp_collection_entry),
                         magic_eden.get_floor_from_api( pfp_collection_entry),
                         digital_eyes.get_floor_from_api( pfp_collection_entry),
                         alpha_art.get_floor_from_api( pfp_collection_entry),
-                    ).await;
+                    );
+                    let tuple = (sol, mag, dig, alph);
                     discord_response_message = construct_response_message(&tuple);
                 }
                 None => {
