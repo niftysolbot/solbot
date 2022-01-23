@@ -7,7 +7,7 @@ pub const SOLANART: &str = "SOLANART";
 pub const DIGITAL_EYES: &str = "DIGITAL_EYES";
 pub const ALPHA_ART: &str = "ALPHA_ART";
 
-pub fn strip_backslash_if_present(mut url: String) -> String {
+pub fn strip_backslash_if_present(url: String) -> String {
     match url.chars().last() {
         Some(u) => {
             if u == '/' {
@@ -113,7 +113,7 @@ fn match_on_attributes(name_from_master_collection: &str, marketplace_name: &str
         slug.insert(marketplace_name.parse().unwrap(), pfp_collection.slug.get(marketplace_name).unwrap().to_string());
     }
     match pfp_collection.website {
-        Some(mut sol_website_name) => match &website {
+        Some(sol_website_name) => match &website {
             Some(source_website_name) =>
                 if sol_website_name.clone().len() > 1 && strip_backslash_if_present(sol_website_name.clone()).eq(&strip_backslash_if_present(source_website_name.clone())) {
                     println!("Website match found: source_website_name: {}, sol_website_name: {}, marketplace: {}", source_website_name, sol_website_name, marketplace_name);
@@ -124,7 +124,7 @@ fn match_on_attributes(name_from_master_collection: &str, marketplace_name: &str
         _ => {}
     }
     match pfp_collection.twitter {
-        Some(mut sol_twitter_name) => match &twitter {
+        Some(sol_twitter_name) => match &twitter {
             Some(source_twitter_name) =>
                 if sol_twitter_name.clone().len() > 1 && strip_backslash_if_present(sol_twitter_name.clone()).eq(&strip_backslash_if_present(source_twitter_name.clone())) {
                     println!("Twitter match found: source_twitter_name: {}, sol_twitter_name: {}, collection: {}", source_twitter_name, sol_twitter_name.clone(), marketplace_name.clone());
@@ -135,7 +135,7 @@ fn match_on_attributes(name_from_master_collection: &str, marketplace_name: &str
         _ => {}
     }
     match pfp_collection.discord {
-        Some(mut sol_discord_name) => match &discord {
+        Some(sol_discord_name) => match &discord {
             Some(source_discord_name) =>
                 if sol_discord_name.clone().len() > 1 && strip_backslash_if_present(sol_discord_name.clone()).eq(&strip_backslash_if_present(source_discord_name.clone())) {
                     println!("Discord match found: source_discord_name: {}, sol_discord_name: {}, collection: {}", source_discord_name, sol_discord_name.clone(), marketplace_name.clone());

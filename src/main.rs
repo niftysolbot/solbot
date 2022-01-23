@@ -9,17 +9,24 @@ use serenity::{
     model::{channel::Message, gateway::Ready},
     prelude::*,
 };
-use serenity::futures::future;
 use tokio::join;
 
-use marketplace::alpha_art::alpha_art_api::{AlphaArt};
-use marketplace::marketplace::MarketplaceCollection;
-use collection::all_collections_handling::{check_if_collection_exists_or_give_suggestions, PfpCollectionEntry};
-use collection::collections_initializer::{ALPHA_ART, combine_pfp_collections, DIGITAL_EYES};
-use crate::collection::collections_initializer::SOLANART;
-use crate::marketplace::digital_eyes::digitaleyes_api::DigitalEyes;
-use crate::marketplace::magiceden::magiceden_api::MagicEden;
-use crate::marketplace::solanart::solanart_api::Solanart;
+use collection::{
+    all_collections_handling::{
+        check_if_collection_exists_or_give_suggestions, PfpCollectionEntry
+    },
+    collections_initializer::{
+        ALPHA_ART, SOLANART, DIGITAL_EYES, combine_pfp_collections
+    }
+};
+
+use marketplace::{
+    marketplace::MarketplaceCollection,
+    alpha_art::alpha_art_api::AlphaArt,
+    digital_eyes::digitaleyes_api::DigitalEyes,
+    magiceden::magiceden_api::MagicEden,
+    solanart::solanart_api::Solanart
+};
 
 
 struct Bot {
@@ -95,16 +102,16 @@ async fn main() {
     let mut magic_eden: MagicEden = MarketplaceCollection::new(String::from("MAGIC_EDEN"));
     let mut solanart: Solanart = MarketplaceCollection::new(String::from("SOLANART"));
 
-    let tuple = future::join4(
+    let (mag_eden, sol, dig, alph) = join!(
         magic_eden.initialize_pfp_collections(),
         solanart.initialize_pfp_collections(),
         digital_eyes.initialize_pfp_collections(),
         alpha_art.initialize_pfp_collections()
-    ).await;
+    );
 
 
-    let pfp_collections = combine_pfp_collections(tuple.0, &tuple.1, &tuple.2, &tuple.3, (SOLANART, DIGITAL_EYES, ALPHA_ART)).await;
-    let mut pfp_collections_updated = combine_pfp_collections(pfp_collections, &tuple.1, &tuple.2, &tuple.3, (SOLANART, DIGITAL_EYES, ALPHA_ART)).await;
+    let pfp_collections = combine_pfp_collections(mag_eden, &sol, &dig, &alph, (SOLANART, DIGITAL_EYES, ALPHA_ART)).await;
+    let mut pfp_collections_updated = combine_pfp_collections(pfp_collections, &sol, &dig, &alph, (SOLANART, DIGITAL_EYES, ALPHA_ART)).await;
 
     // Manually add degen ape for alpha art since they provide no links
     manually_add_slug_to_pfp_collections(&mut pfp_collections_updated, String::from("degenerate ape academy"), String::from("ALPHA_ART"), String::from("dape"));
